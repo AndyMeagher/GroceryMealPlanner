@@ -7,40 +7,27 @@
 
 import Foundation
 
-@Observable
 class Recipe: Identifiable {
-    var id: String
+    let id: String
     var name: String
     var instructions: String
     var ingredients: [Ingredient]
-    
-    var createdAt: Date
+    let createdAt: Date
     var updatedAt: Date
     
-    init(name: String, instructions: String, ingredients: [Ingredient] = []) {
-        self.id = UUID().uuidString
-        self.name = name
-        self.instructions = instructions
-        self.ingredients = ingredients
+    init(id: String = UUID().uuidString,
+         name: String,
+         instructions: String,
+         ingredients: [Ingredient] = [],
+         createdAt: Date = .now,
+         updatedAt: Date = .now) {
         
-        let now = Date()
-        self.createdAt = now
-        self.updatedAt = now
-    }
-    
-    // For Firestore decoding
-    init(id: String, name: String, instructions: String, ingredients: [Ingredient], createdAt: Date, updatedAt: Date) {
         self.id = id
         self.name = name
         self.instructions = instructions
         self.ingredients = ingredients
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-    }
-    
-    // Required for Codable
-    enum CodingKeys: String, CodingKey {
-        case id, name, instructions, ingredients, createdAt, updatedAt
     }
 }
 

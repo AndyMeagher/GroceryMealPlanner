@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RecipeDetailView: View {
-    @Environment(FirebaseDataStore.self) private var dataStore
+    @EnvironmentObject var dataStore: FirebaseDataStore
     @Environment(\.dismiss) private var dismiss
     
     let recipe: Recipe
@@ -25,14 +25,8 @@ struct RecipeDetailView: View {
                         
                         ForEach(recipe.ingredients) { ingredient in
                             HStack {
-                                Image(systemName: "circle")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                
                                 Text(ingredient.name)
-                                
                                 Spacer()
-                                
                                 Text(ingredient.quantity)
                                     .foregroundStyle(.secondary)
                             }

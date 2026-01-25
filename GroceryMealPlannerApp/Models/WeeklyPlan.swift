@@ -7,27 +7,19 @@
 
 import Foundation
 
-@Observable
 class WeeklyPlan: Identifiable {
-    var id: String
+    let id: String
     var weekOf: Date
-    var meals: [DayOfWeek: String] // [dayOfWeek: recipeId]
-    
-    var createdAt: Date
+    var meals: [DayOfWeek: PlannedMeal]
+    let createdAt: Date
     var updatedAt: Date
     
-    init(weekOf: Date, meals: [DayOfWeek: String] = [:]) {
-        self.id = UUID().uuidString
-        self.weekOf = weekOf
-        self.meals = meals
+    init(id: String = UUID().uuidString,
+         weekOf: Date,
+         meals: [DayOfWeek: PlannedMeal] = [:],
+         createdAt: Date = .now,
+         updatedAt: Date = .now) {
         
-        let now = Date()
-        self.createdAt = now
-        self.updatedAt = now
-    }
-    
-    // For Firestore decoding
-    init(id: String, weekOf: Date, meals: [DayOfWeek: String], createdAt: Date, updatedAt: Date) {
         self.id = id
         self.weekOf = weekOf
         self.meals = meals
@@ -36,17 +28,30 @@ class WeeklyPlan: Identifiable {
     }
 }
 
-enum DayOfWeek: String, Codable, CaseIterable, Identifiable {
-    var id: String { self.rawValue }
-    case monday = "Monday"
-    case tuesday = "Tuesday"
-    case wednesday = "Wednesday"
-    case thursday = "Thursday"
-    case friday = "Friday"
-    case saturday = "Saturday"
-    case sunday = "Sunday"
+enum PlannedMeal: Codable, Equatable {
+    case recipe(id: String)
+    case leftovers
+    case takeout
     
-    var displayName: String {
-        self.rawValue
+    func stringValue() -> String {
+        switch self {
+        case .recipe(id: let id):
+            return id
+        case .leftovers:
+            return "leftovers"
+        case .takeout:
+            return "takeout"
+        }
     }
+    
+    func displayText(recipes: [Recipe]) -> String {
+            switch self {
+            case .recipe(let id):
+                return recipes.first(where: { $0.id == id })?.name ?? "Unknown Recipe"
+            case .leftovers:
+                return "Leftovers"
+            case .takeout:
+                return "Takeout"
+            }
+        }
 }

@@ -1,0 +1,54 @@
+# ===============================
+# Xcode
+# ===============================
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# User-specific Xcode files
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# ===============================
+# Swift Package Manager
+# ===============================
+.build/
+Package.resolved
+
+
+# ===============================
+# Firebase / Google
+# ===============================
+GoogleService-Info.plist
+
+# ===============================
+# Logs & temp files
+# ===============================
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# ===============================
+# Environment / Secrets
+# ===============================
+.env
+.env.*
+
+# ===============================
+# Playgrounds
+# ===============================
+timeline.xctimeline
+playground.xcworkspace
+
+# ===============================
+# Archives
+# ===============================
+*.ipa
+*.dSYM.zip
+*.dSYM

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import FirebaseCore
 import FirebaseAuth
 
@@ -21,39 +20,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct GroceryMealPlannerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @State private var dataStore: FirebaseDataStore?  
+    @StateObject private var dataStore = FirebaseDataStore()
     
     var body: some Scene {
         WindowGroup {
             Group {
-                if let dataStore = dataStore {
-                    MainTabs()
-                        .environment(dataStore)
-                } else {
-                    ProgressView("Loading...")
-                }
+                MainTabs()
+                    .environmentObject(dataStore)
+                    .overlay(
+                        GlobalAlertToast()
+                            .environmentObject(dataStore)
+                    )
             }
-            .task {
-                await initialize()
-            }
-        }
-    }
-    
-    private func initialize() async {
-        do {
-            try await ensureSignedIn()
-            // Create Store after Firebase has configured and Signed In
-            if dataStore == nil {
-                dataStore = FirebaseDataStore()
-            }
-        } catch {
-            print("Sign-in error: \(error)")
-        }
-    }
-    
-    func ensureSignedIn() async throws {
-        if Auth.auth().currentUser == nil {
-            _ = try await Auth.auth().signInAnonymously()
         }
     }
 }

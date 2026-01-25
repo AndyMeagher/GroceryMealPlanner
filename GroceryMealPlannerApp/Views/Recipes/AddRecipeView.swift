@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddRecipeView: View {
-    @Environment(FirebaseDataStore.self) private var dataStore
+    @EnvironmentObject var dataStore: FirebaseDataStore
     @Environment(\.dismiss) private var dismiss
     
     @State private var name = ""
@@ -39,7 +39,6 @@ struct AddRecipeView: View {
                     .onDelete { indexSet in
                         ingredients.remove(atOffsets: indexSet)
                     }
-                    
                     Button {
                         addIngredient()
                     } label: {
@@ -100,13 +99,9 @@ struct AddRecipeView: View {
         )
         
         Task {
-            do {
-                try await dataStore.addRecipe(recipe)
-                dismiss()
-            } catch {
-                dataStore.errorMessage = "Failed to save recipe: \(error.localizedDescription)"
-                isSaving = false
-            }
+            await dataStore.addRecipe(recipe)
+            isSaving = false
+            dismiss()
         }
     }
 }

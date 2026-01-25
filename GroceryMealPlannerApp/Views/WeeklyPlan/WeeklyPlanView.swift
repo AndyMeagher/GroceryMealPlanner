@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct WeeklyPlanView: View {
-    @Environment(FirebaseDataStore.self) private var dataStore
-    
+    @EnvironmentObject var dataStore: FirebaseDataStore    
     @State private var currentWeekPlan: WeeklyPlan?
     @State private var selectedDayForPicker: DayOfWeek?
     
@@ -30,13 +29,12 @@ struct WeeklyPlanView: View {
                             
                             Spacer()
                             
-                            if let recipeId = currentWeekPlan?.meals[day],
-                               let recipe = recipes.first(where: { $0.id == recipeId }) {
-                                Text(recipe.name)
+                            if let meal = currentWeekPlan?.meals[day] {
+                                Text(meal.displayText(recipes: recipes))
                                     .foregroundColor(.secondary)
                                 
                                 Button(action: {
-                                    removeRecipe(for: day)
+                                    removeMeal(for: day)
                                 }) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundColor(.red)
@@ -54,8 +52,8 @@ struct WeeklyPlanView: View {
                 }
             }
             .sheet(item: $selectedDayForPicker) { day in
-                RecipePickerView(recipes: recipes, day: day) { recipe in
-                    assignRecipe(recipe, to: day)
+                MealPickerView(recipes: recipes, day: day) { plannedMeal in
+                    assignMeal(plannedMeal, to: day)
                     selectedDayForPicker = nil
                 }
             }
@@ -68,7 +66,6 @@ struct WeeklyPlanView: View {
     
     private func loadOrCreateWeeklyPlan() {
         let startOfWeek = Date().startOfWeek()
-        
         if let existing = dataStore.currentWeekPlan{
             currentWeekPlan = existing
         } else {
@@ -77,23 +74,20 @@ struct WeeklyPlanView: View {
         }
     }
     
-    private func assignRecipe(_ recipe: Recipe, to day: DayOfWeek) {
+    private func assignMeal(_ meal: PlannedMeal, to day: DayOfWeek) {
         guard let plan = currentWeekPlan else { return }
-
         Task{
             do {
-                plan.meals[day] = recipe.id
+                plan.meals[day] = meal
                 try await dataStore.saveWeeklyPlan(plan)
             } catch{
                 
             }
         }
-       
     }
     
-    private func removeRecipe(for day: DayOfWeek) {
+    private func removeMeal(for day: DayOfWeek) {
         guard let plan = currentWeekPlan else { return }
-
         Task{
             do {
                 plan.meals[day] = nil
@@ -102,31 +96,5 @@ struct WeeklyPlanView: View {
                 
             }
         }
-
     }
 }
-
-struct RecipePickerView: View {
-    let recipes: [Recipe]
-    let day: DayOfWeek
-    let onSelect: (Recipe) -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationView {
-            List(recipes) { recipe in
-                Button(action: {
-                    onSelect(recipe)
-                }) {
-                    Text(recipe.name)
-                        .foregroundColor(.primary)
-                }
-            }
-            .navigationTitle("Assign to \(day.rawValue)")
-            .navigationBarItems(trailing: Button("Cancel") {
-                dismiss()
-            })
-        }
-    }
-}
-

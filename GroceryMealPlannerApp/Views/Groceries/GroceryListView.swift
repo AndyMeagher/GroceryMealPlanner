@@ -6,111 +6,97 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct GroceryListView: View {
-//    @Environment(\.modelContext) private var modelContext
-//    @Query(sort: \GroceryItem.createdAt) private var groceryItems: [GroceryItem]
-//    
-//    @State private var showingAddItem = false
-//    @State private var newItemName = ""
-//    @State private var newItemQuantity = ""
     
-    var body: some View {
-//        NavigationStack {
-//            List {
-//                ForEach(groceryItems) { item in
-//                    HStack {
-//                        Button(action: {
-//                            item.isChecked.toggle()
-//                        }) {
-//                            Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-//                                .foregroundColor(item.isChecked ? .green : .gray)
-//                        }
-//                        .buttonStyle(BorderlessButtonStyle())
-//                        
-//                        VStack(alignment: .leading) {
-//                            Text(item.name)
-//                                .strikethrough(item.isChecked)
-//                            Text(item.quantity)
-//                                .font(.caption)
-//                                .foregroundColor(.secondary)
-//                        }
-//                        
-//                        Spacer()
-//                    }
-//                }
-//                .onDelete(perform: deleteItems)
-//            }
-//            .navigationTitle("Grocery List")
-//            .toolbar {
-//                ToolbarItem(placement: .navigationBarTrailing) {
-//                    Button(action: { showingAddItem = true }) {
-//                        Image(systemName: "plus")
-//                    }
-//                }
-//                
-//                ToolbarItem(placement: .navigationBarLeading) {
-//                    Button("Clear Checked") {
-//                        clearCheckedItems()
-//                    }
-//                }
-//            }
-//            .sheet(isPresented: $showingAddItem) {
-//                AddGroceryItemView(isPresented: $showingAddItem)
-//            }
-//        }
-    }
-    
-//    private func deleteItems(at offsets: IndexSet) {
-//        for index in offsets {
-//            modelContext.delete(groceryItems[index])
-//        }
-//    }
-//    
-//    private func clearCheckedItems() {
-//        for item in groceryItems where item.isChecked {
-//            modelContext.delete(item)
-//        }
-//    }
-}
-
-struct AddGroceryItemView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Binding var isPresented: Bool
-    
-    @State private var name = ""
-    @State private var quantity = ""
-    @State private var addedBy = ""
+    @State private var showingAddItem = false
+    @State private var newItemName = ""
+    @State private var newItemQuantity = ""
+    @EnvironmentObject var dataStore: FirebaseDataStore
     
     var body: some View {
         NavigationStack {
-            Form {
-                TextField("Item name", text: $name)
-                TextField("Quantity", text: $quantity)
-                TextField("Added by (optional)", text: $addedBy)
+            Group{
+                groceryList
             }
-            .navigationTitle("Add Item")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Grocery List")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        isPresented = false
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingAddItem = true }) {
+                        Image(systemName: "plus")
                     }
                 }
                 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        let item = GroceryItem(
-                            name: name,
-                            quantity: quantity,
-                        )
-                        modelContext.insert(item)
-                        isPresented = false
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Clear Checked") {
+                        clearCheckedItems()
                     }
-                    .disabled(name.isEmpty)
                 }
             }
+            .sheet(isPresented: $showingAddItem) {
+                AddGroceryItemView(isPresented: $showingAddItem) { item in
+                    addNewItem(item: item)
+                }
+            }
+        }
+    }
+    
+    private var groceryList: some View {
+        List {
+            ForEach(dataStore.groceryItems) { item in
+                HStack {
+                    Button(action: {
+                        updateItemIsChecked(item: item)
+                    }) {
+                        Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(item.isChecked ? .green : .gray)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    
+                    VStack(alignment: .leading) {
+                        Text(item.name)
+                            .strikethrough(item.isChecked)
+                        if let quantity = item.quantity{
+                            Text(quantity)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                }
+            }
+            .onDelete { offsets in
+                offsets.forEach({ index in
+                    let item = dataStore.groceryItems[index]
+                    deleteItem(item: item)
+                })
+            }
+        }
+    }
+    
+    private func deleteItem(item: GroceryItem) {
+        Task {
+            await dataStore.deleteGroceryItem(item)
+        }
+    }
+    
+    private func clearCheckedItems() {
+        Task{
+            await dataStore.deleteAllCheckedGroceryItems()
+        }
+    }
+    
+    private func addNewItem(item: GroceryItem) {
+        Task{
+            await dataStore.addGroceryItem(item)
+        }
+    }
+    
+    private func updateItemIsChecked(item: GroceryItem) {
+        Task{
+            item.isChecked.toggle()
+            await dataStore.updateGroceryItem(item)
         }
     }
 }

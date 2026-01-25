@@ -3,10 +3,10 @@ import SwiftUI
 struct MainTabs: View {
     var body: some View {
         TabView {
-//            GroceryListView()
-//                .tabItem {
-//                    Label("Groceries", systemImage: "cart")
-//                }
+            GroceryListView()
+                .tabItem {
+                    Label("Groceries", systemImage: "cart")
+                }
             
             RecipeListView()
                 .tabItem {

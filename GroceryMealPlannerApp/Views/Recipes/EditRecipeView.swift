@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EditRecipeView: View {
-    @Environment(FirebaseDataStore.self) private var dataStore
+    @EnvironmentObject var dataStore: FirebaseDataStore
     @Environment(\.dismiss) private var dismiss
     
     let recipe: Recipe

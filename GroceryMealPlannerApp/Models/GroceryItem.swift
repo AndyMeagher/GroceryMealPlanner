@@ -6,21 +6,26 @@
 //
 
 import Foundation
-import SwiftData
 
-@Model
-class GroceryItem {
-    var id: String
+class GroceryItem:  Identifiable{
+    let id: String
     var name: String
-    var quantity: String
+    var quantity: String?
     var isChecked: Bool
-    var createdAt: Date
+    let createdAt: Date
+    var updatedAt: Date
     
-    init(name: String, quantity: String, isChecked: Bool = false) {
-        self.id = UUID().uuidString
+    init(id: String = UUID().uuidString,
+         name: String,
+         quantity: String? = nil,
+         isChecked: Bool = false,
+         createdAt: Date = .now,
+         updatedAt: Date = .now) {
+        self.id = id
         self.name = name
         self.quantity = quantity
         self.isChecked = isChecked
-        self.createdAt = Date()
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }

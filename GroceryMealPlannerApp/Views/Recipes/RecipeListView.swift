@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RecipeListView: View {
-    @Environment(FirebaseDataStore.self) private var dataStore
+    @EnvironmentObject var dataStore: FirebaseDataStore
     @State private var showingAddRecipe = false
     @State private var selectedRecipe: Recipe?
     
