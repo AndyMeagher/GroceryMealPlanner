@@ -79,18 +79,16 @@ struct EditRecipeView: View {
     private func saveChanges() {
         isSaving = true
         
-        recipe.name = name
-        recipe.instructions = instructions
-        recipe.ingredients = ingredients
+        var updatedRecipe = recipe
+        updatedRecipe.name = name
+        updatedRecipe.instructions = instructions
+        updatedRecipe.ingredients = ingredients
+        updatedRecipe.updatedAt = Date()
         
         Task {
-            do {
-                try await dataStore.updateRecipe(recipe)
-                dismiss()
-            } catch {
-                dataStore.errorMessage = "Failed to update recipe: \(error.localizedDescription)"
-                isSaving = false
-            }
+            await dataStore.updateRecipe(updatedRecipe)
+            isSaving = false
+            dismiss()
         }
     }
 }

@@ -17,7 +17,20 @@ struct GroceryListView: View {
     var body: some View {
         NavigationStack {
             Group{
-                groceryList
+                
+                Group {
+                    if dataStore.isLoading && dataStore.groceryItems.isEmpty {
+                        ProgressView("Loading recipes...")
+                    } else if dataStore.groceryItems.isEmpty {
+                        ContentUnavailableView(
+                            "No Groceries Yet",
+                            systemImage: "cart",
+                            description: Text("Tap + to add groceries")
+                        )
+                    } else {
+                        groceryList
+                    }
+                }
             }
             .navigationTitle("Grocery List")
             .toolbar {
@@ -44,33 +57,35 @@ struct GroceryListView: View {
     private var groceryList: some View {
         List {
             ForEach(dataStore.groceryItems) { item in
-                HStack {
-                    Button(action: {
-                        updateItemIsChecked(item: item)
-                    }) {
+                Button(action: {
+                    updateItemIsChecked(item: item)
+                }) {
+                    HStack {
                         Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(item.isChecked ? .green : .gray)
-                    }
-                    .buttonStyle(BorderlessButtonStyle())
-                    
-                    VStack(alignment: .leading) {
-                        Text(item.name)
-                            .strikethrough(item.isChecked)
-                        if let quantity = item.quantity{
-                            Text(quantity)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        
+                        VStack(alignment: .leading) {
+                            Text(item.name)
+                                .strikethrough(item.isChecked)
+                                .foregroundColor(.primary)
+                            if let quantity = item.quantity {
+                                Text(quantity)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        
+                        Spacer()
                     }
-                    
-                    Spacer()
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
             .onDelete { offsets in
-                offsets.forEach({ index in
+                offsets.forEach { index in
                     let item = dataStore.groceryItems[index]
                     deleteItem(item: item)
-                })
+                }
             }
         }
     }
@@ -95,8 +110,9 @@ struct GroceryListView: View {
     
     private func updateItemIsChecked(item: GroceryItem) {
         Task{
-            item.isChecked.toggle()
-            await dataStore.updateGroceryItem(item)
+            var updatedItem = item
+            updatedItem.isChecked.toggle()
+            await dataStore.updateGroceryItem(updatedItem)
         }
     }
 }

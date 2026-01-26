@@ -7,13 +7,17 @@
 
 import Foundation
 
-class GroceryItem:  Identifiable{
+struct GroceryItem:  Identifiable{
     let id: String
     var name: String
     var quantity: String?
     var isChecked: Bool
     let createdAt: Date
     var updatedAt: Date
+    
+    var slug: String {
+        return self.name.lowercased().replacingOccurrences(of: " ", with: "_")
+    }
     
     init(id: String = UUID().uuidString,
          name: String,

@@ -7,7 +7,7 @@
 
 import Foundation
 
-class WeeklyPlan: Identifiable {
+struct WeeklyPlan: Identifiable {
     let id: String
     var weekOf: Date
     var meals: [DayOfWeek: PlannedMeal]
@@ -26,8 +26,22 @@ class WeeklyPlan: Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
+    
+    var slug: String {
+        return self.id
+    }
+    
+    func thisWeeksRecipes(from allRecipes: [Recipe]) -> [Recipe] {
+        let ids = Set(
+            meals.values.compactMap {
+                if case let .recipe(id) = $0 { return id }
+                return nil
+            }
+        )
+        return allRecipes.filter { ids.contains($0.id)}
+    }
 }
-
+    
 enum PlannedMeal: Codable, Equatable {
     case recipe(id: String)
     case leftovers
@@ -45,13 +59,13 @@ enum PlannedMeal: Codable, Equatable {
     }
     
     func displayText(recipes: [Recipe]) -> String {
-            switch self {
-            case .recipe(let id):
-                return recipes.first(where: { $0.id == id })?.name ?? "Unknown Recipe"
-            case .leftovers:
-                return "Leftovers"
-            case .takeout:
-                return "Takeout"
-            }
+        switch self {
+        case .recipe(let id):
+            return recipes.first(where: { $0.id == id })?.name ?? "Unknown Recipe"
+        case .leftovers:
+            return "Leftovers"
+        case .takeout:
+            return "Takeout"
         }
+    }
 }

@@ -97,7 +97,7 @@ class FirebaseDataStore : ObservableObject {
                 "createdAt": Timestamp(date: recipe.createdAt),
                 "updatedAt": Timestamp(date: recipe.updatedAt)
             ]
-            try await db.collection("recipes").document(recipe.id).setData(data)
+            try await db.collection("recipes").document(recipe.slug).setData(data)
             errorMessage = nil
         } catch {
             print("Error adding recipe:", error)
@@ -106,13 +106,14 @@ class FirebaseDataStore : ObservableObject {
     }
     
     func updateRecipe(_ recipe: Recipe) async {
-        recipe.updatedAt = Date()
-        await addRecipe(recipe)
+        var updatedRecie = recipe
+        updatedRecie.updatedAt = Date()
+        await addRecipe(updatedRecie)
     }
     
     func deleteRecipe(_ recipe: Recipe) async {
         do {
-            try await db.collection("recipes").document(recipe.id).delete()
+            try await db.collection("recipes").document(recipe.slug).delete()
             errorMessage = nil
         } catch {
             print("Error deleting recipe:", error)
@@ -121,33 +122,7 @@ class FirebaseDataStore : ObservableObject {
     }
     
     private func parseRecipe(from doc: DocumentSnapshot) -> Recipe? {
-        let data = doc.data()
-        
-        guard let name = data?["name"] as? String,
-              let instructions = data?["instructions"] as? String,
-              let ingredientsArray = data?["ingredients"] as? [[String: Any]],
-              let createdTimestamp = data?["createdAt"] as? Timestamp,
-              let updatedTimestamp = data?["updatedAt"] as? Timestamp else {
-            return nil
-        }
-        
-        let ingredients = ingredientsArray.compactMap { ingredientData -> Ingredient? in
-            guard let id = ingredientData["id"] as? String,
-                  let name = ingredientData["name"] as? String,
-                  let quantity = ingredientData["quantity"] as? String else {
-                return nil
-            }
-            return Ingredient(id: id, name: name, quantity: quantity)
-        }
-        
-        return Recipe(
-            id: doc.documentID,
-            name: name,
-            instructions: instructions,
-            ingredients: ingredients,
-            createdAt: createdTimestamp.dateValue(),
-            updatedAt: updatedTimestamp.dateValue()
-        )
+        return FirebaseParser.parseRecipe(from: doc)
     }
     
     // MARK: - Weekly Plan Methods
@@ -189,7 +164,7 @@ class FirebaseDataStore : ObservableObject {
                 "updatedAt": Timestamp(date: Date())
             ]
             
-            try await db.collection("weeklyPlans").document(plan.id).setData(data)
+            try await db.collection("weeklyPlans").document(plan.slug).setData(data)
             errorMessage = nil
         } catch {
             print("Error saving weekly plan:", error)
@@ -198,36 +173,7 @@ class FirebaseDataStore : ObservableObject {
     }
     
     private func parseWeeklyPlan(from doc: DocumentSnapshot) -> WeeklyPlan? {
-        let data = doc.data()
-        
-        guard let weekOfTimestamp = data?["weekOf"] as? Timestamp,
-              let mealsDict = data?["meals"] as? [String: String],
-              let createdTimestamp = data?["createdAt"] as? Timestamp,
-              let updatedTimestamp = data?["updatedAt"] as? Timestamp else {
-            return nil
-        }
-        
-        var meals: [DayOfWeek: PlannedMeal] = [:]
-        for (dayString, mealId) in mealsDict {
-            if let day = DayOfWeek(rawValue: dayString) {
-                switch mealId {
-                case "leftovers":
-                    meals[day] = .leftovers
-                case "takeout":
-                    meals[day] = .takeout
-                default:
-                    meals[day] = .recipe(id: mealId)
-                }
-            }
-        }
-        
-        return WeeklyPlan(
-            id: doc.documentID,
-            weekOf: weekOfTimestamp.dateValue(),
-            meals: meals,
-            createdAt: createdTimestamp.dateValue(),
-            updatedAt: updatedTimestamp.dateValue()
-        )
+        return FirebaseParser.parseWeeklyPlan(from: doc)
     }
     
     // MARK: - Grocery Item Methods
@@ -265,7 +211,7 @@ class FirebaseDataStore : ObservableObject {
             if let quantity = item.quantity {
                 data["quantity"] = quantity
             }
-            try await db.collection("groceries").document(item.id).setData(data)
+            try await db.collection("groceries").document(item.slug).setData(data, merge: true)
             errorMessage = nil
         } catch {
             print("Error adding grocery item:", error)
@@ -274,17 +220,43 @@ class FirebaseDataStore : ObservableObject {
     }
     
     func updateGroceryItem(_ item: GroceryItem) async {
-        item.updatedAt = Date()
-        await addGroceryItem(item)
+        var updatedItem = item
+        updatedItem.updatedAt = Date()
+        await addGroceryItem(updatedItem)
     }
     
     func deleteGroceryItem(_ item: GroceryItem) async {
         do {
-            try await db.collection("groceries").document(item.id).delete()
+            try await db.collection("groceries").document(item.slug).delete()
             errorMessage = nil
         } catch {
             print("Error deleting grocery item:", error)
             errorMessage = "Failed to delete grocery item: \(error.localizedDescription)"
+        }
+    }
+    
+    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async {
+        let batch = db.batch()
+        
+        for item in ingredients {
+            let docRef = db.collection("groceries").document(item.slug)
+            
+            let data: [String: Any] = [
+                "name": item.name,
+                "isChecked": false,
+                "quantity": item.quantity,
+                "createdAt": Timestamp(date: .now),
+                "updatedAt": Timestamp(date: .now)
+            ]
+            
+            batch.setData(data, forDocument: docRef, merge: true)
+        }
+        
+        do {
+            try await batch.commit()
+            print("All grocery items added/updated successfully!")
+        } catch {
+            errorMessage = "Failed to add ingredients to grocery list: \(error.localizedDescription)"
         }
     }
     
@@ -312,24 +284,6 @@ class FirebaseDataStore : ObservableObject {
     }
     
     private func parseGroceryItem(from doc: DocumentSnapshot) -> GroceryItem? {
-        let data = doc.data()
-        
-        guard let name = data?["name"] as? String,
-              let isChecked = data?["isChecked"] as? Bool,
-              let createdTimestamp = data?["createdAt"] as? Timestamp,
-              let updatedTimestamp = data?["updatedAt"] as? Timestamp else {
-            return nil
-        }
-        
-        let quantity = data?["quantity"] as? String
-        
-        return GroceryItem(
-            id: doc.documentID,
-            name: name,
-            quantity: quantity,
-            isChecked: isChecked,
-            createdAt: createdTimestamp.dateValue(),
-            updatedAt: updatedTimestamp.dateValue()
-        )
+        return FirebaseParser.parseGroceryItem(from: doc)
     }
 }

@@ -74,11 +74,7 @@ struct RecipeListView: View {
     
     private func deleteRecipe(_ recipe: Recipe) {
         Task {
-            do {
-                try await dataStore.deleteRecipe(recipe)
-            } catch {
-                dataStore.errorMessage = "Failed to delete recipe: \(error.localizedDescription)"
-            }
+            await dataStore.deleteRecipe(recipe)
         }
     }
 }

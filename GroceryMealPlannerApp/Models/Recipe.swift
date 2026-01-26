@@ -7,13 +7,17 @@
 
 import Foundation
 
-class Recipe: Identifiable {
+struct Recipe: Identifiable {
     let id: String
     var name: String
     var instructions: String
     var ingredients: [Ingredient]
     let createdAt: Date
     var updatedAt: Date
+    
+    var slug: String {
+        return self.name.lowercased().replacingOccurrences(of: " ", with: "_")
+    }
     
     init(id: String = UUID().uuidString,
          name: String,
@@ -31,8 +35,12 @@ class Recipe: Identifiable {
     }
 }
 
-struct Ingredient: Codable, Identifiable {
+struct Ingredient: Hashable, Identifiable {
     var id: String = UUID().uuidString
     var name: String
     var quantity: String
+    
+    var slug: String {
+        return self.name.lowercased().replacingOccurrences(of: " ", with: "_")
+    }
 }
