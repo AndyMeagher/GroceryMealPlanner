@@ -16,9 +16,9 @@ struct GroceryListView: View {
     
     var body: some View {
         NavigationStack {
-            Group{
-                
-                Group {
+            ZStack{
+                Color(.systemGray6).ignoresSafeArea()
+                Group{
                     if dataStore.isLoading && dataStore.groceryItems.isEmpty {
                         ProgressView("Loading recipes...")
                     } else if dataStore.groceryItems.isEmpty {
@@ -44,6 +44,8 @@ struct GroceryListView: View {
                     Button(action: { showingAddItem = true }) {
                         Image(systemName: "plus")
                     }
+                    .tint(Color("Navy"))
+                    .buttonStyle(.glassProminent)
                 }
                 
                 ToolbarItem(placement: .navigationBarLeading) {

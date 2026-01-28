@@ -41,6 +41,8 @@ struct RecipeListView: View {
                     } label: {
                         Label("Add Recipe", systemImage: "plus")
                     }
+                    .tint(Color("Navy"))
+                    .buttonStyle(.glassProminent)
                 }
             }
             .sheet(isPresented: $showingAddRecipe) {

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct WeeklyPlanView: View {
     @EnvironmentObject var dataStore: AppDataStore
-    @State private var currentWeekPlan: WeeklyPlan?
     @State private var selectedDayForPicker: DayOfWeek?
     @State private var showGroceryPickerView: Bool = false
 
@@ -20,12 +19,12 @@ struct WeeklyPlanView: View {
     }
     
     var thisWeeksRecipes: [Recipe]? {
-        return currentWeekPlan?.thisWeeksRecipes(from: allRecipes)
+        return dataStore.currentWeekPlan?.thisWeeksRecipes(from: allRecipes)
     }
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom){
+            ZStack(alignment: .bottom) {
                 List {
                     Section("Week of: \(Date().startOfWeek().formatted(.dateTime.month().day()))") {
                         ForEach(DayOfWeek.allCases, id: \.self) { day in
@@ -35,7 +34,7 @@ struct WeeklyPlanView: View {
                                 
                                 Spacer()
                                 
-                                if let meal = currentWeekPlan?.meals[day] {
+                                if let meal = dataStore.currentWeekPlan?.meals[day] {
                                     Text(meal.displayText(recipes: allRecipes))
                                         .foregroundColor(.secondary)
                                     
@@ -51,12 +50,12 @@ struct WeeklyPlanView: View {
                                         selectedDayForPicker = day
                                     }
                                     .foregroundColor(.blue)
-                                    
                                 }
                             }
                         }
                     }
                 }
+                
                 if let assignedRecipes = thisWeeksRecipes, !assignedRecipes.isEmpty {
                     Button {
                         showGroceryPickerView = true
@@ -71,58 +70,58 @@ struct WeeklyPlanView: View {
                                 .shadow(radius: 5)
                             Text("Add to Grocery List")
                         }
-                       
                     }
                     .padding()
                 }
-                
-            }.sheet(item: $selectedDayForPicker) { day in
+            }
+            .sheet(item: $selectedDayForPicker) { day in
                 MealPickerView(recipes: allRecipes, day: day) { plannedMeal in
                     assignMeal(plannedMeal, to: day)
                     selectedDayForPicker = nil
                 }
-            }.sheet(isPresented: $showGroceryPickerView, content: {
-                if let assignRecipes = thisWeeksRecipes{
-                    GroceryPickerView(recipes: assignRecipes){ itemsToAdd in
+            }
+            .sheet(isPresented: $showGroceryPickerView) {
+                if let assignRecipes = thisWeeksRecipes {
+                    GroceryPickerView(recipes: assignRecipes) { itemsToAdd in
                         addIngredientsToGroceries(itemsToAdd)
                     }
                 }
-            })
+            }
             .navigationTitle("This Week's Dinner")
             .onAppear {
-                loadOrCreateWeeklyPlan()
+                loadOrCreateWeeklyPlanIfNeeded()
             }
         }
     }
     
-    private func loadOrCreateWeeklyPlan() {
-        let startOfWeek = Date().startOfWeek()
-        if let existing = dataStore.currentWeekPlan{
-            currentWeekPlan = existing
-        } else {
-            let newPlan = WeeklyPlan(weekOf: startOfWeek)
-            currentWeekPlan = newPlan
+    private func loadOrCreateWeeklyPlanIfNeeded() {
+        // Only create if it doesn't exist
+        if dataStore.currentWeekPlan == nil {
+            let newPlan = WeeklyPlan(weekOf: Date().startOfWeek())
+            Task {
+                await dataStore.saveWeeklyPlan(newPlan)
+            }
         }
     }
     
     private func assignMeal(_ meal: PlannedMeal, to day: DayOfWeek) {
-        guard var plan = currentWeekPlan else { return }
-        Task{
-            plan.meals[day] = meal
+        guard var plan = dataStore.currentWeekPlan else { return }
+        plan.meals[day] = meal
+        Task {
             await dataStore.saveWeeklyPlan(plan)
         }
     }
     
     private func removeMeal(for day: DayOfWeek) {
-        guard var plan = currentWeekPlan else { return }
-        Task{
-            plan.meals[day] = nil
+        guard var plan = dataStore.currentWeekPlan else { return }
+        plan.meals[day] = nil
+        Task {
             await dataStore.saveWeeklyPlan(plan)
         }
     }
     
     private func addIngredientsToGroceries(_ items: [Ingredient]) {
-        Task{
+        Task {
             await dataStore.addOrUpdateGroceryItems(with: items)
         }
     }
