@@ -10,7 +10,13 @@ import FirebaseFirestore
 import FirebaseAuth
 import Combine
 
-class FirebaseDataStore : ObservableObject {
+enum DataStoreMode {
+    case live
+    case preview
+    case test
+}
+
+class AppDataStore : ObservableObject {
     
     @Published var recipes: [Recipe] = []
     @Published var weeklyPlans: [WeeklyPlan] = []
@@ -28,16 +34,28 @@ class FirebaseDataStore : ObservableObject {
     private var planListener: ListenerRegistration?
     private var groceryListener: ListenerRegistration?
     
-    init() {
+    private let mode: DataStoreMode
+
+    init(mode: DataStoreMode = .live) {
+        
+        self.mode = mode
+
+        guard mode == .live else {
+            //loadMockData()
+            return
+        }
         startListening()
-        Task{
+        authenticateIfNeeded()
+    }
+    
+    private func authenticateIfNeeded() {
+        Task {
             do {
                 if Auth.auth().currentUser == nil {
                     _ = try await Auth.auth().signInAnonymously()
                 }
-            }catch{
-                print("Error authenticating:", error)
-                errorMessage = "Failed to login into Firebase: \(error.localizedDescription)"
+            } catch {
+                setError("Failed to login into Firebase: \(error.localizedDescription)")
             }
         }
     }
@@ -58,6 +76,15 @@ class FirebaseDataStore : ObservableObject {
         groceryListener?.remove()
     }
     
+    @MainActor func setError(_ message: String) {
+        self.errorMessage = message
+        
+    }
+    
+    @MainActor func clearError() {
+        self.errorMessage = nil
+    }
+    
     // MARK: - Recipe Methods
     
     private func startRecipeListener() {
@@ -68,7 +95,7 @@ class FirebaseDataStore : ObservableObject {
                 
                 if let error = error {
                     print("Recipe listener error:", error)
-                    self.errorMessage = "Error loading recipes: \(error.localizedDescription)"
+                    setError("Error loading recipes: \(error.localizedDescription)")
                     return
                 }
                 
@@ -80,7 +107,7 @@ class FirebaseDataStore : ObservableObject {
                 self.recipes = documents.compactMap { doc in
                     self.parseRecipe(from: doc)
                 }
-                self.errorMessage = nil
+                clearError()
             }
     }
     
@@ -98,10 +125,10 @@ class FirebaseDataStore : ObservableObject {
                 "updatedAt": Timestamp(date: recipe.updatedAt)
             ]
             try await db.collection("recipes").document(recipe.slug).setData(data)
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error adding recipe:", error)
-            errorMessage = "Failed to add recipe: \(error.localizedDescription)"
+            setError("Failed to add recipe: \(error.localizedDescription)")
         }
     }
     
@@ -114,22 +141,22 @@ class FirebaseDataStore : ObservableObject {
     func deleteRecipe(_ recipe: Recipe) async {
         do {
             try await db.collection("recipes").document(recipe.slug).delete()
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error deleting recipe:", error)
-            errorMessage = "Failed to delete recipe: \(error.localizedDescription)"
+            setError("Failed to delete recipe: \(error.localizedDescription)")
         }
     }
     
     private func parseRecipe(from doc: DocumentSnapshot) -> Recipe? {
-        return FirebaseParser.parseRecipe(from: doc)
+        return FirebaseModelMapper.parseRecipe(from: doc)
     }
     
     // MARK: - Weekly Plan Methods
     
     private func startWeeklyPlanListener() {
         let startOfWeek = Date().startOfWeek()
-
+        
         planListener = db.collection("weeklyPlans")
             .whereField("weekOf", isGreaterThanOrEqualTo: Timestamp(date: startOfWeek))
             .limit(to: 1)
@@ -138,7 +165,7 @@ class FirebaseDataStore : ObservableObject {
                 
                 if let error = error {
                     print("Weekly plan listener error:", error)
-                    self.errorMessage = "Error loading weekly plans: \(error.localizedDescription)"
+                    setError("Error loading weekly plans: \(error.localizedDescription)")
                     return
                 }
                 
@@ -146,7 +173,7 @@ class FirebaseDataStore : ObservableObject {
                 if let plan = self.parseWeeklyPlan(from: document) {
                     self.weeklyPlans = [plan]
                 }
-                self.errorMessage = nil
+                clearError()
             }
     }
     
@@ -165,15 +192,15 @@ class FirebaseDataStore : ObservableObject {
             ]
             
             try await db.collection("weeklyPlans").document(plan.slug).setData(data)
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error saving weekly plan:", error)
-            errorMessage = "Failed to save weekly plan: \(error.localizedDescription)"
+            setError("Failed to save weekly plan: \(error.localizedDescription)")
         }
     }
     
     private func parseWeeklyPlan(from doc: DocumentSnapshot) -> WeeklyPlan? {
-        return FirebaseParser.parseWeeklyPlan(from: doc)
+        return FirebaseModelMapper.parseWeeklyPlan(from: doc)
     }
     
     // MARK: - Grocery Item Methods
@@ -186,7 +213,7 @@ class FirebaseDataStore : ObservableObject {
                 
                 if let error = error {
                     print("Grocery listener error:", error)
-                    self.errorMessage = "Error loading groceries: \(error.localizedDescription)"
+                    setError("Error loading groceries: \(error.localizedDescription)")
                     return
                 }
                 
@@ -196,7 +223,7 @@ class FirebaseDataStore : ObservableObject {
                 }
                 
                 self.groceryItems = documents.compactMap { self.parseGroceryItem(from: $0) }
-                self.errorMessage = nil
+                clearError()
             }
     }
     
@@ -212,10 +239,10 @@ class FirebaseDataStore : ObservableObject {
                 data["quantity"] = quantity
             }
             try await db.collection("groceries").document(item.slug).setData(data, merge: true)
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error adding grocery item:", error)
-            errorMessage = "Failed to add grocery item: \(error.localizedDescription)"
+            setError("Failed to add grocery item: \(error.localizedDescription)")
         }
     }
     
@@ -228,10 +255,10 @@ class FirebaseDataStore : ObservableObject {
     func deleteGroceryItem(_ item: GroceryItem) async {
         do {
             try await db.collection("groceries").document(item.slug).delete()
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error deleting grocery item:", error)
-            errorMessage = "Failed to delete grocery item: \(error.localizedDescription)"
+            setError("Failed to delete grocery item: \(error.localizedDescription)")
         }
     }
     
@@ -256,7 +283,7 @@ class FirebaseDataStore : ObservableObject {
             try await batch.commit()
             print("All grocery items added/updated successfully!")
         } catch {
-            errorMessage = "Failed to add ingredients to grocery list: \(error.localizedDescription)"
+            setError("Failed to add ingredients to grocery list: \(error.localizedDescription)")
         }
     }
     
@@ -270,20 +297,20 @@ class FirebaseDataStore : ObservableObject {
                 print("No checked items to delete")
                 return
             }
-
+            
             let batch = db.batch()
             for doc in snapshot.documents {
                 batch.deleteDocument(doc.reference)
             }
             try await batch.commit()
-            errorMessage = nil
+            clearError()
         } catch {
             print("Error deleting checked items:", error)
-            errorMessage = "Failed to delete checked items: \(error.localizedDescription)"
+            setError("Failed to delete checked items: \(error.localizedDescription)")
         }
     }
     
     private func parseGroceryItem(from doc: DocumentSnapshot) -> GroceryItem? {
-        return FirebaseParser.parseGroceryItem(from: doc)
+        return FirebaseModelMapper.parseGroceryItem(from: doc)
     }
 }

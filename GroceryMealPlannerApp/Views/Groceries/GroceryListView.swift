@@ -12,7 +12,7 @@ struct GroceryListView: View {
     @State private var showingAddItem = false
     @State private var newItemName = ""
     @State private var newItemQuantity = ""
-    @EnvironmentObject var dataStore: FirebaseDataStore
+    @EnvironmentObject var dataStore: AppDataStore
     
     var body: some View {
         NavigationStack {
@@ -122,3 +122,10 @@ struct GroceryListView: View {
         }
     }
 }
+
+
+#Preview {
+    GroceryListView().environmentObject(AppDataStore(mode: .preview))
+}
+
+

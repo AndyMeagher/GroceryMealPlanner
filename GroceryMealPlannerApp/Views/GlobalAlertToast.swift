@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct GlobalAlertToast: View {
-    @EnvironmentObject var dataStore: FirebaseDataStore
+    @EnvironmentObject var dataStore: AppDataStore
     @State private var showToast = false
 
     var body: some View {
@@ -43,6 +43,6 @@ struct GlobalAlertToast: View {
 
     private func hideToast() {
         showToast = false
-        dataStore.errorMessage = nil
+        dataStore.clearError()
     }
 }

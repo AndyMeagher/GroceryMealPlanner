@@ -9,15 +9,15 @@ import Foundation
 import FirebaseFirestore
 
 // Extend Firebase DocumentSnapshot to allow for easier testing
-extension DocumentSnapshot: DocumentSnapshotProtocol {}
+extension DocumentSnapshot: FirebaseDocument {}
 
-protocol DocumentSnapshotProtocol {
+protocol FirebaseDocument {
     var documentID: String { get }
     func data() -> [String: Any]?
 }
 
-struct FirebaseParser {
-    static func parseRecipe(from doc: DocumentSnapshotProtocol) -> Recipe? {
+struct FirebaseModelMapper {
+    static func parseRecipe(from doc: FirebaseDocument) -> Recipe? {
         let data = doc.data()
         
         guard let name = data?["name"] as? String,
@@ -47,7 +47,7 @@ struct FirebaseParser {
         )
     }
     
-    static func parseWeeklyPlan(from doc: DocumentSnapshotProtocol) -> WeeklyPlan? {
+    static func parseWeeklyPlan(from doc: FirebaseDocument) -> WeeklyPlan? {
         let data = doc.data()
         
         guard let weekOfTimestamp = data?["weekOf"] as? Timestamp,
@@ -80,7 +80,7 @@ struct FirebaseParser {
         )
     }
     
-    static func parseGroceryItem(from doc: DocumentSnapshotProtocol) -> GroceryItem? {
+    static func parseGroceryItem(from doc: FirebaseDocument) -> GroceryItem? {
         let data = doc.data()
         
         guard let name = data?["name"] as? String,

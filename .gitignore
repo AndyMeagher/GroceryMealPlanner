@@ -6,6 +6,7 @@ build/
 *.xcuserstate
 *.xccheckout
 *.xcscmblueprint
+xcuserdata/**
 
 # User-specific Xcode files
 *.pbxuser

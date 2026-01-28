@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RecipeListView: View {
-    @EnvironmentObject var dataStore: FirebaseDataStore
+    @EnvironmentObject var dataStore: AppDataStore
     @State private var showingAddRecipe = false
     @State private var selectedRecipe: Recipe?
     
@@ -51,7 +51,7 @@ struct RecipeListView: View {
             }
             .alert("Error", isPresented: .constant(dataStore.errorMessage != nil)) {
                 Button("OK") {
-                    dataStore.errorMessage = nil
+                    dataStore.clearError()
                 }
             } message: {
                 Text(dataStore.errorMessage ?? "")

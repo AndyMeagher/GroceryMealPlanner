@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WeeklyPlanView: View {
-    @EnvironmentObject var dataStore: FirebaseDataStore
+    @EnvironmentObject var dataStore: AppDataStore
     @State private var currentWeekPlan: WeeklyPlan?
     @State private var selectedDayForPicker: DayOfWeek?
     @State private var showGroceryPickerView: Bool = false

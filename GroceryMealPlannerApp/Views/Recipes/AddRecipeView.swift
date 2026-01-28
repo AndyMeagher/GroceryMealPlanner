@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddRecipeView: View {
-    @EnvironmentObject var dataStore: FirebaseDataStore
+    @EnvironmentObject var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
     @State private var name = ""

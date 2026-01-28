@@ -20,8 +20,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct GroceryMealPlannerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var dataStore = FirebaseDataStore()
-    
+    @StateObject private var dataStore = AppDataStore()
     
     init() {
         AppAppearance.configure()
