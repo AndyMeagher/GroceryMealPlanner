@@ -18,11 +18,17 @@ struct RecipeListView: View {
                 if dataStore.isLoading && dataStore.recipes.isEmpty {
                     ProgressView("Loading recipes...")
                 } else if dataStore.recipes.isEmpty {
-                    ContentUnavailableView(
-                        "No Recipes Yet",
-                        systemImage: "book.closed",
-                        description: Text("Tap + to add your first recipe")
-                    )
+                    ContentUnavailableView {
+                        Label {
+                            Text("No Recipes Yet")
+                                .font(AppFont.bold(size: 22))
+                        } icon: {
+                            Image(systemName: "book.closed")
+                        }
+                    } description: {
+                        Text("Tap + to add your first recipe")
+                            .font(AppFont.regular(size: 16))
+                    }
                 } else {
                     recipeList
                 }
@@ -56,18 +62,21 @@ struct RecipeListView: View {
     private var recipeList: some View {
         List {
             ForEach(dataStore.recipes) { recipe in
-                RecipeRowView(recipe: recipe)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedRecipe = recipe
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(recipe.name)
+                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedRecipe = recipe
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        deleteRecipe(recipe)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            deleteRecipe(recipe)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+                }
             }
         }
     }
@@ -76,17 +85,5 @@ struct RecipeListView: View {
         Task {
             await dataStore.deleteRecipe(recipe)
         }
-    }
-}
-
-struct RecipeRowView: View {
-    let recipe: Recipe
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(recipe.name)
-                .font(.headline)
-        }
-        .padding(.vertical, 4)
     }
 }

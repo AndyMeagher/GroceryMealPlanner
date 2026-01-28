@@ -22,11 +22,17 @@ struct GroceryMealPlannerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var dataStore = FirebaseDataStore()
     
+    
+    init() {
+        AppAppearance.configure()
+    }
+    
     var body: some Scene {
         WindowGroup {
             Group {
                 MainTabs()
                     .environmentObject(dataStore)
+                    .environment(\.font, AppFont.regular(size: 16))
                     .overlay(
                         GlobalAlertToast()
                             .environmentObject(dataStore)

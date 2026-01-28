@@ -22,11 +22,17 @@ struct GroceryListView: View {
                     if dataStore.isLoading && dataStore.groceryItems.isEmpty {
                         ProgressView("Loading recipes...")
                     } else if dataStore.groceryItems.isEmpty {
-                        ContentUnavailableView(
-                            "No Groceries Yet",
-                            systemImage: "cart",
-                            description: Text("Tap + to add groceries")
-                        )
+                        ContentUnavailableView {
+                            Label {
+                                Text("No Groceries Yet")
+                                    .font(AppFont.bold(size: 22))
+                            } icon: {
+                                Image(systemName: "cart")
+                            }
+                        } description: {
+                            Text("Tap + to add groceries")
+                                .font(AppFont.regular(size: 16))
+                        }
                     } else {
                         groceryList
                     }

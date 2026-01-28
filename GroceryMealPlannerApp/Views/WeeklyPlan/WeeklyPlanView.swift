@@ -31,7 +31,7 @@ struct WeeklyPlanView: View {
                         ForEach(DayOfWeek.allCases, id: \.self) { day in
                             HStack {
                                 Text(day.displayName)
-                                    .font(.headline)
+                                    .font(AppFont.bold(size: 22))
                                 
                                 Spacer()
                                 
