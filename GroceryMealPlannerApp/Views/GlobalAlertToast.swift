@@ -43,6 +43,8 @@ struct GlobalAlertToast: View {
 
     private func hideToast() {
         showToast = false
-        dataStore.clearError()
+        DispatchQueue.main.async {
+            self.dataStore.errorMessage = nil
+        }
     }
 }

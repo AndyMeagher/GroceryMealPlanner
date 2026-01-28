@@ -12,12 +12,16 @@ struct RecipeListView: View {
     @State private var showingAddRecipe = false
     @State private var selectedRecipe: Recipe?
     
+    var recipes : [Recipe] {
+        return dataStore.recipes ?? []
+    }
+    
     var body: some View {
         NavigationStack {
             Group {
-                if dataStore.isLoading && dataStore.recipes.isEmpty {
+                if dataStore.recipes == nil {
                     ProgressView("Loading recipes...")
-                } else if dataStore.recipes.isEmpty {
+                } else if recipes.isEmpty {
                     ContentUnavailableView {
                         Label {
                             Text("No Recipes Yet")
@@ -29,6 +33,8 @@ struct RecipeListView: View {
                         Text("Tap + to add your first recipe")
                             .font(AppFont.regular(size: 16))
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("No recipes yet. Tap + to add your first recipe")
                 } else {
                     recipeList
                 }
@@ -53,7 +59,9 @@ struct RecipeListView: View {
             }
             .alert("Error", isPresented: .constant(dataStore.errorMessage != nil)) {
                 Button("OK") {
-                    dataStore.clearError()
+                    DispatchQueue.main.async {
+                        self.dataStore.errorMessage = nil
+                    }
                 }
             } message: {
                 Text(dataStore.errorMessage ?? "")
@@ -63,7 +71,7 @@ struct RecipeListView: View {
     
     private var recipeList: some View {
         List {
-            ForEach(dataStore.recipes) { recipe in
+            ForEach(recipes) { recipe in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(recipe.name)
                 }
@@ -71,6 +79,12 @@ struct RecipeListView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     selectedRecipe = recipe
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(recipe.name)
+                .accessibilityHint("Double tap to view recipe details")
+                .accessibilityAction(named: "Delete") {
+                    deleteRecipe(recipe)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
@@ -88,4 +102,8 @@ struct RecipeListView: View {
             await dataStore.deleteRecipe(recipe)
         }
     }
+}
+
+#Preview {
+    RecipeListView().environmentObject(AppDataStore(mode: .preview))
 }

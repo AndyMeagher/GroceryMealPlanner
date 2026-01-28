@@ -9,21 +9,23 @@ import SwiftUI
 
 struct AppFont {
     // SwiftUI Fonts
-    static func regular(size: CGFloat) -> Font {
-        .custom("Synonym-Regular", size: size)
+    static func regular(size: CGFloat, textStyle: Font.TextStyle = .body) -> Font {
+        .custom("Synonym-Regular", size: size, relativeTo: textStyle)
     }
     
-    static func bold(size: CGFloat) -> Font {
-        .custom("Synonym-Bold", size: size)
+    static func bold(size: CGFloat, textStyle: Font.TextStyle = .body) -> Font {
+        .custom("Synonym-Bold", size: size, relativeTo: textStyle)
     }
     
     // UIKit Fonts
-    static func regularUIFont(size: CGFloat) -> UIFont {
-        UIFont(name: "Synonym-Regular", size: size) ?? UIFont.systemFont(ofSize: size)
+    static func regularUIFont(size: CGFloat, textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let baseFont = UIFont(name: "Synonym-Regular", size: size) ?? UIFont.systemFont(ofSize: size)
+        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: baseFont)
     }
     
-    static func boldUIFont(size: CGFloat) -> UIFont {
-        UIFont(name: "Synonym-Bold", size: size) ?? UIFont.systemFont(ofSize: size)
+    static func boldUIFont(size: CGFloat, textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let baseFont = UIFont(name: "Synonym-Bold", size: size) ?? UIFont.systemFont(ofSize: size, weight: .bold)
+        return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: baseFont)
     }
 }
 

@@ -13,9 +13,9 @@ struct WeeklyPlanView: View {
     @State private var showGroceryPickerView: Bool = false
 
     var allRecipes: [Recipe] {
-        return dataStore.recipes.sorted {
+        return dataStore.recipes?.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-        }
+        } ?? []
     }
     
     var thisWeeksRecipes: [Recipe]? {
@@ -45,13 +45,18 @@ struct WeeklyPlanView: View {
                                             .foregroundColor(.red)
                                     }
                                     .buttonStyle(BorderlessButtonStyle())
+                                    .accessibilityLabel("Remove meal for \(day.displayName)")
+                                    .accessibilityHint("Double tap to remove this meal from the plan")
                                 } else {
                                     Button("Assign Recipe") {
                                         selectedDayForPicker = day
                                     }
                                     .foregroundColor(.blue)
+                                    .accessibilityLabel("Assign a recipe for \(day.displayName)")
+                                    .accessibilityHint("Double tap to choose a recipe for this day")
                                 }
                             }
+                            .accessibilityElement(children: .combine)
                         }
                     }
                 }
@@ -71,6 +76,8 @@ struct WeeklyPlanView: View {
                             Text("Add to Grocery List")
                         }
                     }
+                    .accessibilityLabel("Add ingredients to Grocery List")
+                    .accessibilityHint("Double tap to add recipe ingredients to the grocery list")
                     .padding()
                 }
             }
@@ -125,4 +132,8 @@ struct WeeklyPlanView: View {
             await dataStore.addOrUpdateGroceryItems(with: items)
         }
     }
+}
+
+#Preview {
+    WeeklyPlanView().environmentObject(AppDataStore(mode: .preview))
 }

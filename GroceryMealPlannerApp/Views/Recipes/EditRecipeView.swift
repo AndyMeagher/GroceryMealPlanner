@@ -30,19 +30,27 @@ struct EditRecipeView: View {
             Form {
                 Section("Recipe Name") {
                     TextField("Name", text: $name)
+                        .accessibilityLabel("Recipe Name")
+                        .accessibilityHint("Enter the name of the recipe")
                 }
                 
                 Section("Instructions") {
                     TextField("Instructions", text: $instructions, axis: .vertical)
                         .lineLimit(5...10)
+                        .accessibilityLabel("Instructions")
+                        .accessibilityHint("Enter cooking instructions")
                 }
                 
                 Section("Ingredients") {
                     ForEach($ingredients) { $ingredient in
                         HStack {
                             TextField("Ingredient", text: $ingredient.name)
+                                .accessibilityLabel("Ingredient Name")
+                                .accessibilityHint("Enter the ingredient name")
                             TextField("Amount", text: $ingredient.quantity)
                                 .frame(width: 80)
+                                .accessibilityLabel("Ingredient Amount")
+                                .accessibilityHint("Enter the quantity for this ingredient")
                         }
                     }
                     .onDelete { indexSet in
@@ -54,6 +62,7 @@ struct EditRecipeView: View {
                     } label: {
                         Label("Add Ingredient", systemImage: "plus.circle.fill")
                     }
+                    .accessibilityHint("Adds a new blank ingredient row")
                 }
             }
             .navigationTitle("Edit Recipe")
@@ -64,6 +73,7 @@ struct EditRecipeView: View {
                         dismiss()
                     }
                     .disabled(isSaving)
+                    .accessibilityHint("Discard changes and close editor")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -71,6 +81,7 @@ struct EditRecipeView: View {
                         saveChanges()
                     }
                     .disabled(isSaving)
+                    .accessibilityHint("Save the changes to this recipe")
                 }
             }
         }

@@ -20,8 +20,7 @@ struct RecipeDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Ingredients")
-                            .font(.title2)
-                            .bold()
+                            .font(AppFont.bold(size: 20))
                         
                         ForEach(recipe.ingredients) { ingredient in
                             HStack {
@@ -30,6 +29,8 @@ struct RecipeDetailView: View {
                                 Text(ingredient.quantity)
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(ingredient.name), quantity \(ingredient.quantity)")
                         }
                     }
                     
@@ -37,11 +38,11 @@ struct RecipeDetailView: View {
                     
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Instructions")
-                            .font(.title2)
-                            .bold()
                         
                         Text(recipe.instructions.isEmpty ? "No instructions provided" : recipe.instructions)
                             .foregroundStyle(recipe.instructions.isEmpty ? .secondary : .primary)
+                            .accessibilityLabel(recipe.instructions.isEmpty ? "No instructions provided" : recipe.instructions)
+                            .accessibilityHint("Step-by-step instructions for this recipe")
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -49,13 +50,6 @@ struct RecipeDetailView: View {
                             Text("Created:")
                                 .foregroundStyle(.secondary)
                             Text(recipe.createdAt, style: .date)
-                        }
-                        .font(.caption)
-                        
-                        HStack {
-                            Text("Last updated:")
-                                .foregroundStyle(.secondary)
-                            Text(recipe.updatedAt, style: .relative)
                         }
                         .font(.caption)
                     }
@@ -72,12 +66,17 @@ struct RecipeDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
+                    .tint(Color("Navy"))
+                    .buttonStyle(.glassProminent)
+                    .accessibilityHint("Edit this recipe")
+
                 }
                 
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
                         dismiss()
                     }
+                    .accessibilityHint("Close the recipe details")
                 }
             }
             .sheet(isPresented: $isEditing) {

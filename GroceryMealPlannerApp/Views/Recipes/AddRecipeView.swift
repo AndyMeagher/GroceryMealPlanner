@@ -21,11 +21,15 @@ struct AddRecipeView: View {
             Form {
                 Section("Recipe Name") {
                     TextField("e.g., Spaghetti Carbonara", text: $name)
+                        .accessibilityLabel("Recipe Name")
+                        .accessibilityHint("Enter the name of your recipe")
                 }
                 
                 Section("Instructions") {
                     TextField("How to make this recipe...", text: $instructions, axis: .vertical)
                         .lineLimit(5...10)
+                        .accessibilityLabel("Instructions")
+                        .accessibilityHint("Enter step-by-step cooking instructions")
                 }
                 
                 Section {
@@ -60,6 +64,7 @@ struct AddRecipeView: View {
                         dismiss()
                     }
                     .disabled(isSaving)
+                    .accessibilityHint("Discard this recipe and close")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -67,6 +72,7 @@ struct AddRecipeView: View {
                         saveRecipe()
                     }
                     .disabled(!canSave || isSaving)
+                    .accessibilityHint("Save this new recipe")
                 }
             }
             .overlay {
@@ -126,12 +132,16 @@ struct IngredientRowView: View {
                 .onChange(of: name) { _, newValue in
                     updateIngredient()
                 }
+                .accessibilityLabel("Ingredient Name")
+                .accessibilityHint("Enter the ingredient name")
             
             TextField("Qty", text: $quantity)
                 .frame(width: 80)
                 .onChange(of: quantity) { _, newValue in
                     updateIngredient()
                 }
+                .accessibilityLabel("Ingredient Quantity")
+                .accessibilityHint("Enter the quantity for this ingredient")
         }
     }
     

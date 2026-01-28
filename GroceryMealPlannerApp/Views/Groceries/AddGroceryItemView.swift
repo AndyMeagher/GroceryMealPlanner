@@ -18,7 +18,9 @@ struct AddGroceryItemView: View {
         NavigationStack {
             Form {
                 TextField("Item name", text: $name)
+                    .accessibilityLabel("Item name")
                 TextField("Quantity", text: $quantity)
+                    .accessibilityLabel("Quantity")
             }
             .navigationTitle("Add Item")
             .navigationBarTitleDisplayMode(.inline)
@@ -27,6 +29,7 @@ struct AddGroceryItemView: View {
                     Button("Cancel") {
                         isPresented = false
                     }
+                    .accessibilityHint("Closes this screen without adding an item")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -39,6 +42,7 @@ struct AddGroceryItemView: View {
                         isPresented = false
                     }
                     .disabled(name.isEmpty)
+                    .accessibilityHint("Adds the grocery item to your list")
                 }
             }
         }

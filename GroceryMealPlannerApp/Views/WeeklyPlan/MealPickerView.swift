@@ -24,22 +24,28 @@ struct MealPickerView: View {
                         }) {
                             Text(recipe.name)
                         }
+                        .accessibilityLabel("Assign \(recipe.name) to \(day.displayName)")
+                        .accessibilityHint("Double tap to assign this recipe")
                     }
                 }
                 
-                Section(header: Text("or:")) {
+                Section(header: Text("Alternative options:")) {
                     Button(action: {
                         self.onSelect(.leftovers)
                         self.dismiss()
                     }) {
                         Text("Leftovers")
                     }
+                    .accessibilityLabel("Assign Leftovers to \(day.displayName)")
+                    .accessibilityHint("Double tap to assign leftovers for this day")
                     Button(action: {
                         self.onSelect(.takeout)
                         self.dismiss()
                     }) {
                         Text("Takeout")
                     }
+                    .accessibilityLabel("Assign Takeout to \(day.displayName)")
+                    .accessibilityHint("Double tap to assign takeout for this day")
                 }
             }
             .navigationTitle("Assign to \(day.rawValue)")

@@ -35,6 +35,10 @@ struct GroceryPickerView: View {
                             .onTapGesture {
                                 toggleSelection(for: ingredient)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(ingredient.name), \(ingredient.quantity)")
+                            .accessibilityValue(selectedIngredients.contains(ingredient) ? "Selected" : "Not selected")
+                            .accessibilityHint("Double tap to toggle selection")
                         }
                     }
                 }
@@ -46,6 +50,7 @@ struct GroceryPickerView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityHint("Closes this screen without adding ingredients")
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -55,6 +60,7 @@ struct GroceryPickerView: View {
                         dismiss()
                     }
                     .disabled(selectedIngredients.isEmpty)
+                    .accessibilityHint("Adds all selected ingredients to your grocery list")
                 }
             }
         }

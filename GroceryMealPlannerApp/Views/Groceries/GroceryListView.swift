@@ -14,14 +14,20 @@ struct GroceryListView: View {
     @State private var newItemQuantity = ""
     @EnvironmentObject var dataStore: AppDataStore
     
+    var groceryItems : [GroceryItem] {
+        return dataStore.groceryItems ?? []
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack{
-                Color(.systemGray6).ignoresSafeArea()
+                Color(.systemGray6)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
                 Group{
-                    if dataStore.isLoading && dataStore.groceryItems.isEmpty {
-                        ProgressView("Loading recipes...")
-                    } else if dataStore.groceryItems.isEmpty {
+                    if dataStore.groceryItems == nil {
+                        ProgressView("Loading Groceries...")
+                    } else if groceryItems.isEmpty {
                         ContentUnavailableView {
                             Label {
                                 Text("No Groceries Yet")
@@ -33,6 +39,8 @@ struct GroceryListView: View {
                             Text("Tap + to add groceries")
                                 .font(AppFont.regular(size: 16))
                         }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("No groceries yet. Tap + to add items.")
                     } else {
                         groceryList
                     }
@@ -46,12 +54,14 @@ struct GroceryListView: View {
                     }
                     .tint(Color("Navy"))
                     .buttonStyle(.glassProminent)
+                    .accessibilityLabel("Add Grocery Item")
                 }
                 
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Clear Checked") {
                         clearCheckedItems()
                     }
+                    .accessibilityHint("Removes all checked items from the list")
                 }
             }
             .sheet(isPresented: $showingAddItem) {
@@ -64,7 +74,7 @@ struct GroceryListView: View {
     
     private var groceryList: some View {
         List {
-            ForEach(dataStore.groceryItems) { item in
+            ForEach(groceryItems) { item in
                 Button(action: {
                     updateItemIsChecked(item: item)
                 }) {
@@ -82,16 +92,22 @@ struct GroceryListView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        
                         Spacer()
                     }
+                    .accessibilityElement(children: .combine)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(item.name)
+                .accessibilityValue(item.isChecked ? "Checked" : "Unchecked")
+                .accessibilityHint("Double tap to toggle")
+                .accessibilityAction(named: "Delete") {
+                    deleteItem(item: item)
+                }
             }
             .onDelete { offsets in
                 offsets.forEach { index in
-                    let item = dataStore.groceryItems[index]
+                    let item = groceryItems[index]
                     deleteItem(item: item)
                 }
             }
