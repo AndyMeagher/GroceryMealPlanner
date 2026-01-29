@@ -7,35 +7,68 @@
 
 import XCTest
 
-final class GroceryMealPlannerAppUITests: XCTestCase {
+final class GroceryMealPlannerUITests: XCTestCase {
 
+    var app: XCUIApplication!
+    
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        app = XCUIApplication()
+        app.launchArguments = ["uitesting"]
+        app.launch()
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        app = nil
     }
+        
+    func testGroceryListAccessibility() throws {
+        let groceryNavBar = app.navigationBars["Grocery List"]
+        XCTAssertTrue(groceryNavBar.exists)
+        
+        let addButton = groceryNavBar.buttons["Add Grocery Item"]
+        XCTAssertTrue(addButton.exists)
+        XCTAssertTrue(addButton.isHittable)
+        
+        let emptyView = app.staticTexts["No groceries yet. Tap + to add items."]
+        XCTAssertTrue(emptyView.exists)
 
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
+    
+    func testAddGroceryItemFlow() throws {
+        let addButton = app.navigationBars["Grocery List"].buttons["Add Grocery Item"]
+        XCTAssertTrue(addButton.exists)
+        addButton.tap()
+        
+        let nameField = app.textFields["Item name"]
+        XCTAssertTrue(nameField.exists)
+        nameField.tap()
+        nameField.typeText("Milk")
+        
+        let quantityField = app.textFields["Quantity"]
+        XCTAssertTrue(quantityField.exists)
+        quantityField.tap()
+        quantityField.typeText("1 Liter")
+        
+        let addItemButton = app.navigationBars.buttons["Add"]
+        XCTAssertTrue(addItemButton.exists)
+        XCTAssertTrue(addItemButton.isEnabled)
+        addItemButton.tap()
+        
+        let newItem = app.buttons["Milk"]
+        XCTAssertTrue(newItem.waitForExistence(timeout: 2))
+        XCTAssertEqual(newItem.value as? String, "Unchecked")
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+        // Tapping new item checks it off
+        newItem.tap()
+        XCTAssertEqual(newItem.value as? String, "Checked")
+        
+        // Clears new item
+        let clearCheckedButton = app.navigationBars["Grocery List"].buttons["Clear Checked"]
+        XCTAssertTrue(clearCheckedButton.exists)
+        clearCheckedButton.tap()
+        
+        XCTAssertFalse(newItem.waitForExistence(timeout: 2))
     }
+    
 }

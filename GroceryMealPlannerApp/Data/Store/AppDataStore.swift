@@ -18,39 +18,43 @@ enum DataStoreMode {
 
 class AppDataStore: ObservableObject {
     
+    // MARK: - Properties
+    
+    @Published var groceryItems: [GroceryItem]?
     @Published var recipes: [Recipe]?
     @Published var weeklyPlans: [WeeklyPlan]?
-    @Published var groceryItems: [GroceryItem]?
     @Published var errorMessage: String?
     
     var currentWeekPlan: WeeklyPlan? {
         weeklyPlans?.first
     }
     
-    private let db = Firestore.firestore()
+    private let dataBase = Firestore.firestore()
+    private let firestoreService: FirestoreService
+    
+    private var groceryListener: ListenerRegistration?
     private var recipeListener: ListenerRegistration?
     private var planListener: ListenerRegistration?
-    private var groceryListener: ListenerRegistration?
     
     private let mode: DataStoreMode
     
     // MARK: - Path Configuration
-
+    
     private var dataBasePath: String {
         if let householdKey = KeychainHelper.getItem("andys_household_key") {
             return "households/\(householdKey)"
         }
-
         guard let uid = Auth.auth().currentUser?.uid else {
             return "users/unknown"
         }
-
         return "users/\(uid)"
     }
     
-    init(mode: DataStoreMode = .live) {
+    init(mode: DataStoreMode = .live,
+         service: FirestoreService = FirestoreService()) {
         self.mode = mode
-        
+        self.firestoreService = service
+
         guard mode == .live else {
             recipes = []
             weeklyPlans = []
@@ -58,22 +62,7 @@ class AppDataStore: ObservableObject {
             return
         }
         
-        authenticateIfNeeded()
-    }
-    
-    private func authenticateIfNeeded() {
-        Task {
-            do {
-                if Auth.auth().currentUser == nil {
-                    _ = try await Auth.auth().signInAnonymously()
-                }
-                self.startListening()
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to login into Firebase: \(error.localizedDescription)"
-                }
-            }
-        }
+        startListening()
     }
     
     deinit {
@@ -81,21 +70,134 @@ class AppDataStore: ObservableObject {
     }
     
     private func startListening() {
+        startGroceryListener()
         startRecipeListener()
         startWeeklyPlanListener()
-        startGroceryListener()
     }
     
     private func stopListening() {
+        groceryListener?.remove()
         recipeListener?.remove()
         planListener?.remove()
-        groceryListener?.remove()
+    }
+    
+    // MARK: - Grocery Item Methods
+    
+    private func startGroceryListener() {
+        groceryListener = dataBase.collection("\(dataBasePath)/groceries")
+            .order(by: "createdAt", descending: true)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("Grocery listener error:", error)
+                        self.errorMessage = "Error loading groceries: \(error.localizedDescription)"
+                        self.groceryItems = []
+                        return
+                    }
+                    
+                    self.groceryItems = snapshot?.documents.compactMap {
+                        FirebaseModelMapper.parseGroceryItem(from: $0)
+                    } ?? []
+                    
+                    self.errorMessage = nil
+                }
+            }
+    }
+    
+    func addGroceryItem(_ item: GroceryItem) async {
+        do {
+            let addedItems = try await firestoreService.addGroceryItem(item)
+            DispatchQueue.main.async {
+                self.groceryItems?.append(contentsOf: addedItems)
+                self.errorMessage = nil
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to add grocery item: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func updateGroceryItem(_ item: GroceryItem) async {
+        var updatedItem = item
+        updatedItem.updatedAt = Date()
+        await addGroceryItem(updatedItem)
+    }
+    
+    func deleteGroceryItem(_ item: GroceryItem) async {
+        do {
+            try await dataBase.collection("\(dataBasePath)/groceries").document(item.slug).delete()
+            DispatchQueue.main.async {
+                self.errorMessage = nil
+            }
+        } catch {
+            print("Error deleting grocery item:", error)
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to delete grocery item: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async {
+        let batch = dataBase.batch()
+        
+        for item in ingredients {
+            let docRef = dataBase.collection("\(dataBasePath)/groceries").document(item.slug)
+            
+            let data: [String: Any] = [
+                "name": item.name,
+                "isChecked": false,
+                "quantity": item.quantity,
+                "createdAt": Timestamp(date: .now),
+                "updatedAt": Timestamp(date: .now)
+            ]
+            
+            batch.setData(data, forDocument: docRef, merge: true)
+        }
+        
+        do {
+            try await batch.commit()
+            print("All grocery items added/updated successfully!")
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to add ingredients to grocery list: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func deleteAllCheckedGroceryItems() async {
+        do {
+            let snapshot = try await dataBase.collection("\(dataBasePath)/groceries")
+                .whereField("isChecked", isEqualTo: true)
+                .getDocuments()
+            
+            guard !snapshot.documents.isEmpty else {
+                print("No checked items to delete")
+                return
+            }
+            
+            let batch = dataBase.batch()
+            for doc in snapshot.documents {
+                batch.deleteDocument(doc.reference)
+            }
+            try await batch.commit()
+            DispatchQueue.main.async {
+                self.errorMessage = nil
+            }
+        } catch {
+            print("Error deleting checked items:", error)
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to delete checked items: \(error.localizedDescription)"
+            }
+        }
     }
     
     // MARK: - Recipe Methods
     
     private func startRecipeListener() {
-        recipeListener = db.collection("\(dataBasePath)/recipes")
+        recipeListener = dataBase.collection("\(dataBasePath)/recipes")
             .order(by: "updatedAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
@@ -130,7 +232,7 @@ class AppDataStore: ObservableObject {
                 "createdAt": Timestamp(date: recipe.createdAt),
                 "updatedAt": Timestamp(date: recipe.updatedAt)
             ]
-            try await db.collection("\(dataBasePath)/recipes").document(recipe.slug).setData(data)
+            try await dataBase.collection("\(dataBasePath)/recipes").document(recipe.slug).setData(data)
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -150,7 +252,7 @@ class AppDataStore: ObservableObject {
     
     func deleteRecipe(_ recipe: Recipe) async {
         do {
-            try await db.collection("\(dataBasePath)/recipes").document(recipe.slug).delete()
+            try await dataBase.collection("\(dataBasePath)/recipes").document(recipe.slug).delete()
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -167,7 +269,7 @@ class AppDataStore: ObservableObject {
     private func startWeeklyPlanListener() {
         let startOfWeek = Date().startOfWeek()
         
-        planListener = db.collection("\(dataBasePath)/weeklyPlans")
+        planListener = dataBase.collection("\(dataBasePath)/weeklyPlans")
             .whereField("weekOf", isGreaterThanOrEqualTo: Timestamp(date: startOfWeek))
             .limit(to: 1)
             .addSnapshotListener { [weak self] snapshot, error in
@@ -207,7 +309,7 @@ class AppDataStore: ObservableObject {
                 "updatedAt": Timestamp(date: Date())
             ]
             
-            try await db.collection("\(dataBasePath)/weeklyPlans").document(plan.slug).setData(data)
+            try await dataBase.collection("\(dataBasePath)/weeklyPlans").document(plan.slug).setData(data)
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -215,128 +317,6 @@ class AppDataStore: ObservableObject {
             print("Error saving weekly plan:", error)
             DispatchQueue.main.async {
                 self.errorMessage = "Failed to save weekly plan: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    // MARK: - Grocery Item Methods
-    
-    private func startGroceryListener() {
-        groceryListener = db.collection("\(dataBasePath)/groceries")
-            .order(by: "createdAt", descending: true)
-            .addSnapshotListener { [weak self] snapshot, error in
-                guard let self = self else { return }
-                
-                DispatchQueue.main.async {
-                    if let error = error {
-                        print("Grocery listener error:", error)
-                        self.errorMessage = "Error loading groceries: \(error.localizedDescription)"
-                        self.groceryItems = []
-                        return
-                    }
-                    
-                    self.groceryItems = snapshot?.documents.compactMap {
-                        FirebaseModelMapper.parseGroceryItem(from: $0)
-                    } ?? []
-                    
-                    self.errorMessage = nil
-                }
-            }
-    }
-    
-    func addGroceryItem(_ item: GroceryItem) async {
-        do {
-            var data: [String: Any] = [
-                "name": item.name,
-                "isChecked": item.isChecked,
-                "createdAt": Timestamp(date: item.createdAt),
-                "updatedAt": Timestamp(date: item.updatedAt)
-            ]
-            if let quantity = item.quantity {
-                data["quantity"] = quantity
-            }
-            try await db.collection("\(dataBasePath)/groceries").document(item.slug).setData(data, merge: true)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
-        } catch {
-            print("Error adding grocery item:", error)
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to add grocery item: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    func updateGroceryItem(_ item: GroceryItem) async {
-        var updatedItem = item
-        updatedItem.updatedAt = Date()
-        await addGroceryItem(updatedItem)
-    }
-    
-    func deleteGroceryItem(_ item: GroceryItem) async {
-        do {
-            try await db.collection("\(dataBasePath)/groceries").document(item.slug).delete()
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
-        } catch {
-            print("Error deleting grocery item:", error)
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to delete grocery item: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async {
-        let batch = db.batch()
-        
-        for item in ingredients {
-            let docRef = db.collection("\(dataBasePath)/groceries").document(item.slug)
-            
-            let data: [String: Any] = [
-                "name": item.name,
-                "isChecked": false,
-                "quantity": item.quantity,
-                "createdAt": Timestamp(date: .now),
-                "updatedAt": Timestamp(date: .now)
-            ]
-            
-            batch.setData(data, forDocument: docRef, merge: true)
-        }
-        
-        do {
-            try await batch.commit()
-            print("All grocery items added/updated successfully!")
-        } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to add ingredients to grocery list: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    func deleteAllCheckedGroceryItems() async {
-        do {
-            let snapshot = try await db.collection("\(dataBasePath)/groceries")
-                .whereField("isChecked", isEqualTo: true)
-                .getDocuments()
-            
-            guard !snapshot.documents.isEmpty else {
-                print("No checked items to delete")
-                return
-            }
-            
-            let batch = db.batch()
-            for doc in snapshot.documents {
-                batch.deleteDocument(doc.reference)
-            }
-            try await batch.commit()
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
-        } catch {
-            print("Error deleting checked items:", error)
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to delete checked items: \(error.localizedDescription)"
             }
         }
     }

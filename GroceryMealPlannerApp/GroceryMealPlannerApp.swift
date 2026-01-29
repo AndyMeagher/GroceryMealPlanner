@@ -20,10 +20,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct GroceryMealPlannerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var dataStore = AppDataStore()
-    
+    @StateObject private var dataStore: AppDataStore
+
     init() {
+        if ProcessInfo.processInfo.arguments.contains("uitesting") {
+            _dataStore = StateObject(wrappedValue: AppDataStore(mode: .test))
+        } else {
+            _dataStore = StateObject(wrappedValue: AppDataStore())
+        }
         AppAppearance.configure()
+        authenticateIfNeeded()
     }
     
     var body: some Scene {
@@ -36,6 +42,18 @@ struct GroceryMealPlannerApp: App {
                         GlobalAlertToast()
                             .environmentObject(dataStore)
                     )
+            }
+        }
+    }
+    
+    private func authenticateIfNeeded() {
+        Task {
+            do {
+                if Auth.auth().currentUser == nil {
+                    _ = try await Auth.auth().signInAnonymously()
+                }
+            } catch {
+                print("Failed to login into Firebase: \(error.localizedDescription)")
             }
         }
     }
