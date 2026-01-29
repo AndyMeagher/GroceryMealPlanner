@@ -151,5 +151,5 @@ struct WeeklyPlanView: View {
 }
 
 #Preview {
-    WeeklyPlanView().environmentObject(AppDataStore(mode: .preview))
+    WeeklyPlanView().environmentObject(AppDataStore(service: MockFirestoreService()))
 }

@@ -150,7 +150,7 @@ struct GroceryListView: View {
 
 
 #Preview {
-    GroceryListView().environmentObject(AppDataStore(mode: .preview))
+    GroceryListView().environmentObject(AppDataStore(service: MockFirestoreService()))
 }
 
 

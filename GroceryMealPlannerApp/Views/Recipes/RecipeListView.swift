@@ -104,5 +104,5 @@ struct RecipeListView: View {
 }
 
 #Preview {
-    RecipeListView().environmentObject(AppDataStore(mode: .preview))
+    RecipeListView().environmentObject(AppDataStore(service: MockFirestoreService()))
 }

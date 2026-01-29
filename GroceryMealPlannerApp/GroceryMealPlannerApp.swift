@@ -24,7 +24,7 @@ struct GroceryMealPlannerApp: App {
 
     init() {
         if ProcessInfo.processInfo.arguments.contains("uitesting") {
-            _dataStore = StateObject(wrappedValue: AppDataStore(mode: .test))
+            _dataStore = StateObject(wrappedValue: AppDataStore(service: MockFirestoreService()))
         } else {
             _dataStore = StateObject(wrappedValue: AppDataStore())
         }
