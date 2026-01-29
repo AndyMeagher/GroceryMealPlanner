@@ -33,18 +33,31 @@ class AppDataStore: ObservableObject {
     private var groceryListener: ListenerRegistration?
     
     private let mode: DataStoreMode
+    
+    // MARK: - Path Configuration
 
+    private var dataBasePath: String {
+        if let householdKey = KeychainHelper.getItem("andys_household_key") {
+            return "households/\(householdKey)"
+        }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return "users/unknown"
+        }
+
+        return "users/\(uid)"
+    }
+    
     init(mode: DataStoreMode = .live) {
         self.mode = mode
-
+        
         guard mode == .live else {
             recipes = []
             weeklyPlans = []
-            //groceryItems = []
+            groceryItems = []
             return
         }
         
-        startListening()
         authenticateIfNeeded()
     }
     
@@ -54,6 +67,7 @@ class AppDataStore: ObservableObject {
                 if Auth.auth().currentUser == nil {
                     _ = try await Auth.auth().signInAnonymously()
                 }
+                self.startListening()
             } catch {
                 DispatchQueue.main.async {
                     self.errorMessage = "Failed to login into Firebase: \(error.localizedDescription)"
@@ -81,7 +95,7 @@ class AppDataStore: ObservableObject {
     // MARK: - Recipe Methods
     
     private func startRecipeListener() {
-        recipeListener = db.collection("recipes")
+        recipeListener = db.collection("\(dataBasePath)/recipes")
             .order(by: "updatedAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
@@ -116,7 +130,7 @@ class AppDataStore: ObservableObject {
                 "createdAt": Timestamp(date: recipe.createdAt),
                 "updatedAt": Timestamp(date: recipe.updatedAt)
             ]
-            try await db.collection("recipes").document(recipe.slug).setData(data)
+            try await db.collection("\(dataBasePath)/recipes").document(recipe.slug).setData(data)
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -136,7 +150,7 @@ class AppDataStore: ObservableObject {
     
     func deleteRecipe(_ recipe: Recipe) async {
         do {
-            try await db.collection("recipes").document(recipe.slug).delete()
+            try await db.collection("\(dataBasePath)/recipes").document(recipe.slug).delete()
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -153,7 +167,7 @@ class AppDataStore: ObservableObject {
     private func startWeeklyPlanListener() {
         let startOfWeek = Date().startOfWeek()
         
-        planListener = db.collection("weeklyPlans")
+        planListener = db.collection("\(dataBasePath)/weeklyPlans")
             .whereField("weekOf", isGreaterThanOrEqualTo: Timestamp(date: startOfWeek))
             .limit(to: 1)
             .addSnapshotListener { [weak self] snapshot, error in
@@ -193,7 +207,7 @@ class AppDataStore: ObservableObject {
                 "updatedAt": Timestamp(date: Date())
             ]
             
-            try await db.collection("weeklyPlans").document(plan.slug).setData(data)
+            try await db.collection("\(dataBasePath)/weeklyPlans").document(plan.slug).setData(data)
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -208,7 +222,7 @@ class AppDataStore: ObservableObject {
     // MARK: - Grocery Item Methods
     
     private func startGroceryListener() {
-        groceryListener = db.collection("groceries")
+        groceryListener = db.collection("\(dataBasePath)/groceries")
             .order(by: "createdAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
@@ -241,7 +255,7 @@ class AppDataStore: ObservableObject {
             if let quantity = item.quantity {
                 data["quantity"] = quantity
             }
-            try await db.collection("groceries").document(item.slug).setData(data, merge: true)
+            try await db.collection("\(dataBasePath)/groceries").document(item.slug).setData(data, merge: true)
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -261,7 +275,7 @@ class AppDataStore: ObservableObject {
     
     func deleteGroceryItem(_ item: GroceryItem) async {
         do {
-            try await db.collection("groceries").document(item.slug).delete()
+            try await db.collection("\(dataBasePath)/groceries").document(item.slug).delete()
             DispatchQueue.main.async {
                 self.errorMessage = nil
             }
@@ -277,7 +291,7 @@ class AppDataStore: ObservableObject {
         let batch = db.batch()
         
         for item in ingredients {
-            let docRef = db.collection("groceries").document(item.slug)
+            let docRef = db.collection("\(dataBasePath)/groceries").document(item.slug)
             
             let data: [String: Any] = [
                 "name": item.name,
@@ -302,7 +316,7 @@ class AppDataStore: ObservableObject {
     
     func deleteAllCheckedGroceryItems() async {
         do {
-            let snapshot = try await db.collection("groceries")
+            let snapshot = try await db.collection("\(dataBasePath)/groceries")
                 .whereField("isChecked", isEqualTo: true)
                 .getDocuments()
             
