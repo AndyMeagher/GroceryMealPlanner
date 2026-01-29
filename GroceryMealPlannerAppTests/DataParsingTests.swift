@@ -2,7 +2,7 @@ import XCTest
 @testable import GroceryMealPlannerApp
 import FirebaseFirestore
 
-struct MockDocumentSnapshot: DocumentSnapshotProtocol {
+struct MockDocumentSnapshot: FirebaseDocument {
     let documentID: String
     private let mockData: [String: Any]?
     
@@ -16,7 +16,7 @@ struct MockDocumentSnapshot: DocumentSnapshotProtocol {
     }
 }
 
-class FirebaseParserTests: XCTestCase {
+class FirebaseModelMapperTests: XCTestCase {
     
     // MARK: - Recipe Parsing Tests
     
@@ -36,7 +36,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNotNil(recipe, "Recipe should not be nil")
         XCTAssertEqual(recipe?.id, "pasta_carbonara")
@@ -56,7 +56,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNil(recipe, "Recipe should be nil when name is missing")
     }
@@ -72,7 +72,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNil(recipe, "Recipe should be nil when instructions are missing")
     }
@@ -88,7 +88,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNil(recipe, "Recipe should be nil when ingredients are missing")
     }
@@ -105,7 +105,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNotNil(recipe)
         XCTAssertEqual(recipe?.ingredients.count, 0)
@@ -128,7 +128,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNotNil(recipe)
         XCTAssertEqual(recipe?.ingredients.count, 1, "Should only include valid ingredient")
@@ -147,7 +147,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
         
         XCTAssertNil(recipe, "Recipe should be nil when data types are wrong")
     }
@@ -171,7 +171,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
 
         XCTAssertNotNil(plan)
         XCTAssertEqual(plan?.id, "week_2025_01_26")
@@ -189,7 +189,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertEqual(plan?.meals[.monday], .leftovers)
     }
@@ -205,7 +205,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertEqual(plan?.meals[.friday], .takeout)
     }
@@ -221,7 +221,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertEqual(plan?.meals[.thursday], .recipe(id: "recipe_chicken_tikka"))
     }
@@ -245,7 +245,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertNotNil(plan)
         XCTAssertEqual(plan?.meals[.monday], .recipe(id: "recipe_pasta"))
@@ -271,7 +271,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertNotNil(plan)
         XCTAssertEqual(plan?.meals.count, 1, "Should only include valid day")
@@ -288,7 +288,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
         
         XCTAssertNil(plan, "Plan should be nil when weekOf is missing")
     }
@@ -307,7 +307,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
         XCTAssertNotNil(item)
         XCTAssertEqual(item?.id, "milk")
@@ -327,7 +327,7 @@ class FirebaseParserTests: XCTestCase {
             ]
         )
         
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
         XCTAssertNotNil(item)
         XCTAssertEqual(item?.name, "Bread")
@@ -348,7 +348,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
        
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
 
         XCTAssertTrue(item?.isChecked ?? false)
     }
@@ -366,7 +366,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
     
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertFalse(item?.isChecked ?? true)
@@ -385,7 +385,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
     
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertNil(item, "Item should be nil when name is missing")
@@ -404,7 +404,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
     
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertNil(item, "Item should be nil when isChecked is missing")
@@ -421,7 +421,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
     
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertNil(item, "Item should be nil when timestamps are missing")
@@ -440,7 +440,7 @@ class FirebaseParserTests: XCTestCase {
         )
         
     
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertNotNil(item, "Parser doesn't validate empty strings, just presence")
@@ -454,9 +454,9 @@ class FirebaseParserTests: XCTestCase {
         let mockDoc = MockDocumentSnapshot(id: "nil_data", data: nil)
         
     
-        let recipe = FirebaseParser.parseRecipe(from: mockDoc)
-        let plan = FirebaseParser.parseWeeklyPlan(from: mockDoc)
-        let item = FirebaseParser.parseGroceryItem(from: mockDoc)
+        let recipe = FirebaseModelMapper.parseRecipe(from: mockDoc)
+        let plan = FirebaseModelMapper.parseWeeklyPlan(from: mockDoc)
+        let item = FirebaseModelMapper.parseGroceryItem(from: mockDoc)
         
        
         XCTAssertNil(recipe)
