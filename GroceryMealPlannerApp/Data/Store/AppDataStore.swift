@@ -38,6 +38,9 @@ class AppDataStore: ObservableObject {
         self.mode = mode
 
         guard mode == .live else {
+            recipes = []
+            weeklyPlans = []
+            //groceryItems = []
             return
         }
         

@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct EditRecipeView: View {
+    
+    // MARK: Properties
+    
     @EnvironmentObject var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
@@ -25,45 +28,14 @@ struct EditRecipeView: View {
         _ingredients = State(initialValue: recipe.ingredients)
     }
     
+    // MARK: - Body
+    
     var body: some View {
         NavigationStack {
             Form {
-                Section("Recipe Name") {
-                    TextField("Name", text: $name)
-                        .accessibilityLabel("Recipe Name")
-                        .accessibilityHint("Enter the name of the recipe")
-                }
-                
-                Section("Instructions") {
-                    TextField("Instructions", text: $instructions, axis: .vertical)
-                        .lineLimit(5...10)
-                        .accessibilityLabel("Instructions")
-                        .accessibilityHint("Enter cooking instructions")
-                }
-                
-                Section("Ingredients") {
-                    ForEach($ingredients) { $ingredient in
-                        HStack {
-                            TextField("Ingredient", text: $ingredient.name)
-                                .accessibilityLabel("Ingredient Name")
-                                .accessibilityHint("Enter the ingredient name")
-                            TextField("Amount", text: $ingredient.quantity)
-                                .frame(width: 80)
-                                .accessibilityLabel("Ingredient Amount")
-                                .accessibilityHint("Enter the quantity for this ingredient")
-                        }
-                    }
-                    .onDelete { indexSet in
-                        ingredients.remove(atOffsets: indexSet)
-                    }
-                    
-                    Button {
-                        ingredients.append(Ingredient(name: "", quantity: ""))
-                    } label: {
-                        Label("Add Ingredient", systemImage: "plus.circle.fill")
-                    }
-                    .accessibilityHint("Adds a new blank ingredient row")
-                }
+                nameSection
+                instructionsSection
+                instructionsSection
             }
             .navigationTitle("Edit Recipe")
             .navigationBarTitleDisplayMode(.inline)
@@ -73,7 +45,6 @@ struct EditRecipeView: View {
                         dismiss()
                     }
                     .disabled(isSaving)
-                    .accessibilityHint("Discard changes and close editor")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -81,11 +52,57 @@ struct EditRecipeView: View {
                         saveChanges()
                     }
                     .disabled(isSaving)
-                    .accessibilityHint("Save the changes to this recipe")
                 }
             }
         }
     }
+    
+    // MARK: - Subviews
+    
+    private var nameSection: some View {
+        Section("Recipe Name") {
+            TextField("Name", text: $name)
+                .accessibilityLabel("Recipe Name")
+                .accessibilityHint("Enter the name of the recipe")
+        }
+    }
+    
+    private var instructionsSection: some View {
+        Section("Instructions") {
+            TextField("Instructions", text: $instructions, axis: .vertical)
+                .lineLimit(5...10)
+                .accessibilityLabel("Instructions")
+                .accessibilityHint("Enter cooking instructions")
+        }
+    }
+    
+    private var ingredientListSection: some View {
+        Section("Ingredients") {
+            ForEach($ingredients) { $ingredient in
+                HStack {
+                    TextField("Ingredient", text: $ingredient.name)
+                        .accessibilityLabel("Ingredient Name")
+                        .accessibilityHint("Enter the ingredient name")
+                    TextField("Amount", text: $ingredient.quantity)
+                        .frame(width: 80)
+                        .accessibilityLabel("Ingredient Amount")
+                        .accessibilityHint("Enter the quantity for this ingredient")
+                }
+            }
+            .onDelete { indexSet in
+                ingredients.remove(atOffsets: indexSet)
+            }
+            
+            Button {
+                ingredients.append(Ingredient(name: "", quantity: ""))
+            } label: {
+                Label("Add Ingredient", systemImage: "plus.circle.fill")
+            }
+            .accessibilityHint("Adds a new blank ingredient row")
+        }
+    }
+    
+    // MARK: - Methods
     
     private func saveChanges() {
         isSaving = true

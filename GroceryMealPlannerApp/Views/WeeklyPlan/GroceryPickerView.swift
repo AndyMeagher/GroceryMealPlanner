@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct GroceryPickerView: View {
-
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedIngredients: Set<Ingredient> = []
+    
     let recipes: [Recipe]
     let onAdd: ([Ingredient]) -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var selectedIngredients: Set<Ingredient> = []
 
     var body: some View {
         NavigationStack {
@@ -23,9 +23,7 @@ struct GroceryPickerView: View {
                         ForEach(recipe.ingredients) { ingredient in
                             HStack {
                                 Text("\(ingredient.name) - \(ingredient.quantity)")
-
                                 Spacer()
-
                                 if selectedIngredients.contains(ingredient) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundColor(.accentColor)
@@ -38,19 +36,16 @@ struct GroceryPickerView: View {
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("\(ingredient.name), \(ingredient.quantity)")
                             .accessibilityValue(selectedIngredients.contains(ingredient) ? "Selected" : "Not selected")
-                            .accessibilityHint("Double tap to toggle selection")
                         }
                     }
                 }
             }
             .navigationTitle("Add Groceries")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .accessibilityHint("Closes this screen without adding ingredients")
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -60,7 +55,7 @@ struct GroceryPickerView: View {
                         dismiss()
                     }
                     .disabled(selectedIngredients.isEmpty)
-                    .accessibilityHint("Adds all selected ingredients to your grocery list")
+                    .accessibilityLabel("Add selected ingredients to grocery list")
                 }
             }
         }

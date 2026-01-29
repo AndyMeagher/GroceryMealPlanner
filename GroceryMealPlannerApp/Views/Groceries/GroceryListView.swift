@@ -9,6 +9,8 @@ import SwiftUI
 
 struct GroceryListView: View {
     
+    // MARK: - Properties
+    
     @State private var showingAddItem = false
     @State private var newItemName = ""
     @State private var newItemQuantity = ""
@@ -18,34 +20,12 @@ struct GroceryListView: View {
         return dataStore.groceryItems ?? []
     }
     
+    // MARK: - Body
+    
     var body: some View {
         NavigationStack {
-            ZStack{
-                Color(.systemGray6)
-                    .ignoresSafeArea()
-                    .accessibilityHidden(true)
-                Group{
-                    if dataStore.groceryItems == nil {
-                        ProgressView("Loading Groceries...")
-                    } else if groceryItems.isEmpty {
-                        ContentUnavailableView {
-                            Label {
-                                Text("No Groceries Yet")
-                                    .font(AppFont.bold(size: 22))
-                            } icon: {
-                                Image(systemName: "cart")
-                            }
-                        } description: {
-                            Text("Tap + to add groceries")
-                                .font(AppFont.regular(size: 16))
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("No groceries yet. Tap + to add items.")
-                    } else {
-                        groceryList
-                    }
-                }
-            }
+            content
+                .background(Color(.systemGray6))
             .navigationTitle("Grocery List")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -61,15 +41,42 @@ struct GroceryListView: View {
                     Button("Clear Checked") {
                         clearCheckedItems()
                     }
-                    .accessibilityHint("Removes all checked items from the list")
                 }
             }
             .sheet(isPresented: $showingAddItem) {
-                AddGroceryItemView(isPresented: $showingAddItem) { item in
+                AddGroceryItemView{ item in
                     addNewItem(item: item)
+                    
                 }
             }
         }
+    }
+    
+    // MARK: - Subviews
+    
+    @ViewBuilder
+    private var content: some View {
+        if dataStore.groceryItems == nil {
+            ProgressView("Loading Groceries...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if groceryItems.isEmpty {
+            ContentUnavailableView {
+                Label {
+                    Text("No Groceries Yet")
+                        .font(AppFont.bold(size: 22))
+                } icon: {
+                    Image(systemName: "cart")
+                }
+            } description: {
+                Text("Tap + to add groceries")
+                    .font(AppFont.regular(size: 16))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("No groceries yet. Tap + to add items.")
+        } else {
+            groceryList
+        }
+
     }
     
     private var groceryList: some View {
@@ -81,7 +88,6 @@ struct GroceryListView: View {
                     HStack {
                         Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(item.isChecked ? .green : .gray)
-                        
                         VStack(alignment: .leading) {
                             Text(item.name)
                                 .strikethrough(item.isChecked)
@@ -100,7 +106,6 @@ struct GroceryListView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(item.name)
                 .accessibilityValue(item.isChecked ? "Checked" : "Unchecked")
-                .accessibilityHint("Double tap to toggle")
                 .accessibilityAction(named: "Delete") {
                     deleteItem(item: item)
                 }
@@ -113,6 +118,8 @@ struct GroceryListView: View {
             }
         }
     }
+    
+    // MARK: Methods
     
     private func deleteItem(item: GroceryItem) {
         Task {

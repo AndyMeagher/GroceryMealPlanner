@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct AddGroceryItemView: View {
-    @Binding var isPresented: Bool
     
+    // MARK: - Properties
+    
+    @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var quantity = ""
     let onAdd: (GroceryItem) -> Void
+    
+    // MARK: - Body
     
     var body: some View {
         NavigationStack {
@@ -27,11 +31,10 @@ struct AddGroceryItemView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        isPresented = false
+                        dismiss()
+
                     }
-                    .accessibilityHint("Closes this screen without adding an item")
                 }
-                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         let item = GroceryItem(
@@ -39,10 +42,9 @@ struct AddGroceryItemView: View {
                             quantity: quantity,
                         )
                         onAdd(item)
-                        isPresented = false
+                        dismiss()
                     }
                     .disabled(name.isEmpty)
-                    .accessibilityHint("Adds the grocery item to your list")
                 }
             }
         }

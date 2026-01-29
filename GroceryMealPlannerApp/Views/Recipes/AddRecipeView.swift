@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct AddRecipeView: View {
+    
+    // MARK: - Properties
+    
     @EnvironmentObject var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
@@ -16,45 +19,14 @@ struct AddRecipeView: View {
     @State private var ingredients: [Ingredient] = []
     @State private var isSaving = false
     
+    // MARK: - Body
+    
     var body: some View {
         NavigationStack {
             Form {
-                Section("Recipe Name") {
-                    TextField("e.g., Spaghetti Carbonara", text: $name)
-                        .accessibilityLabel("Recipe Name")
-                        .accessibilityHint("Enter the name of your recipe")
-                }
-                
-                Section("Instructions") {
-                    TextField("How to make this recipe...", text: $instructions, axis: .vertical)
-                        .lineLimit(5...10)
-                        .accessibilityLabel("Instructions")
-                        .accessibilityHint("Enter step-by-step cooking instructions")
-                }
-                
-                Section {
-                    ForEach(ingredients) { ingredient in
-                        IngredientRowView(ingredient: ingredient) { updated in
-                            if let index = ingredients.firstIndex(where: { $0.id == ingredient.id }) {
-                                ingredients[index] = updated
-                            }
-                        }
-                    }
-                    .onDelete { indexSet in
-                        ingredients.remove(atOffsets: indexSet)
-                    }
-                    Button {
-                        addIngredient()
-                    } label: {
-                        Label("Add Ingredient", systemImage: "plus.circle.fill")
-                    }
-                } header: {
-                    Text("Ingredients")
-                } footer: {
-                    if ingredients.isEmpty {
-                        Text("Add at least one ingredient")
-                    }
-                }
+                recipeNameSection
+                instructionsSection
+                ingredientsSection
             }
             .navigationTitle("New Recipe")
             .navigationBarTitleDisplayMode(.inline)
@@ -64,7 +36,6 @@ struct AddRecipeView: View {
                         dismiss()
                     }
                     .disabled(isSaving)
-                    .accessibilityHint("Discard this recipe and close")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -72,7 +43,6 @@ struct AddRecipeView: View {
                         saveRecipe()
                     }
                     .disabled(!canSave || isSaving)
-                    .accessibilityHint("Save this new recipe")
                 }
             }
             .overlay {
@@ -85,6 +55,58 @@ struct AddRecipeView: View {
             }
         }
     }
+    
+    // MARK: - Subviews
+    
+    private var recipeNameSection: some View {
+        Section("Recipe Name") {
+            TextField("e.g., Spaghetti Carbonara", text: $name)
+                .accessibilityLabel("Recipe Name")
+        }
+    }
+    
+    private var instructionsSection: some View {
+        Section("Instructions") {
+            TextField("How to make this recipe...", text: $instructions, axis: .vertical)
+                .lineLimit(5...10)
+                .accessibilityLabel("Instructions")
+        }
+    }
+    
+    private var ingredientsSection: some View {
+        Section {
+            ForEach($ingredients) { $ingredient in
+                ingredientRow(ingredient: $ingredient)
+            }
+            .onDelete { indexSet in
+                ingredients.remove(atOffsets: indexSet)
+            }
+            Button {
+                addIngredient()
+            } label: {
+                Label("Add Ingredient", systemImage: "plus.circle.fill")
+            }
+        } header: {
+            Text("Ingredients")
+        } footer: {
+            if ingredients.isEmpty {
+                Text("Add at least one ingredient")
+            }
+        }
+    }
+    
+    private func ingredientRow(ingredient: Binding<Ingredient>) -> some View {
+          HStack {
+              TextField("Ingredient", text: ingredient.name)
+                  .accessibilityLabel("Ingredient Name")
+              
+              TextField("Qty", text: ingredient.quantity)
+                  .frame(width: 80)
+                  .accessibilityLabel("Ingredient Quantity")
+          }
+    }
+    
+    // MARK: - Methods
     
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -112,43 +134,4 @@ struct AddRecipeView: View {
     }
 }
 
-struct IngredientRowView: View {
-    let ingredient: Ingredient
-    let onUpdate: (Ingredient) -> Void
-    
-    @State private var name: String
-    @State private var quantity: String
-    
-    init(ingredient: Ingredient, onUpdate: @escaping (Ingredient) -> Void) {
-        self.ingredient = ingredient
-        self.onUpdate = onUpdate
-        _name = State(initialValue: ingredient.name)
-        _quantity = State(initialValue: ingredient.quantity)
-    }
-    
-    var body: some View {
-        HStack {
-            TextField("Ingredient", text: $name)
-                .onChange(of: name) { _, newValue in
-                    updateIngredient()
-                }
-                .accessibilityLabel("Ingredient Name")
-                .accessibilityHint("Enter the ingredient name")
-            
-            TextField("Qty", text: $quantity)
-                .frame(width: 80)
-                .onChange(of: quantity) { _, newValue in
-                    updateIngredient()
-                }
-                .accessibilityLabel("Ingredient Quantity")
-                .accessibilityHint("Enter the quantity for this ingredient")
-        }
-    }
-    
-    private func updateIngredient() {
-        var updated = ingredient
-        updated.name = name
-        updated.quantity = quantity
-        onUpdate(updated)
-    }
-}
+

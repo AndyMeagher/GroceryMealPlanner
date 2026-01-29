@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AppFont {
-    // SwiftUI Fonts
+    // MARK: - SwiftUI Fonts
     static func regular(size: CGFloat, textStyle: Font.TextStyle = .body) -> Font {
         .custom("Synonym-Regular", size: size, relativeTo: textStyle)
     }
@@ -17,7 +17,7 @@ struct AppFont {
         .custom("Synonym-Bold", size: size, relativeTo: textStyle)
     }
     
-    // UIKit Fonts
+    // MARK: - UIKit Fonts
     static func regularUIFont(size: CGFloat, textStyle: UIFont.TextStyle = .body) -> UIFont {
         let baseFont = UIFont(name: "Synonym-Regular", size: size) ?? UIFont.systemFont(ofSize: size)
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: baseFont)
