@@ -30,6 +30,7 @@ struct WeeklyPlanView: View {
     var body: some View {
         NavigationStack {
             thisWeekList
+                .background(Color(.systemGray6))
                 .navigationTitle("This Week's Dinner")
                 .sheet(item: $selectedDayForPicker) { day in
                     MealPickerView(recipes: allRecipes, day: day) { plannedMeal in
@@ -83,11 +84,13 @@ struct WeeklyPlanView: View {
                 }
             }
             header:{
-                Text("Week of: \(Date().startOfWeek().formatted(.dateTime.month().day()))")
+                Text("Week of: \(Date().startOfWeek().formatted(.dateTime.month().day()))").padding(.bottom)
             }
             footer: {
                 addGroceriesButton
             }
+        }.safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 16)
         }
     }
     

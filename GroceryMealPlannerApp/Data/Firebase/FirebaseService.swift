@@ -9,8 +9,10 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-
 protocol FirestoreServiceProtocol {
+    
+    func ensureAuthenticated() async throws
+    
     func observeGroceryItems(
         onUpdate: @escaping ([GroceryItem]) -> Void,
         onError: ((String) -> Void)?
@@ -43,6 +45,14 @@ class FirestoreService : FirestoreServiceProtocol {
     
     private let dataBase: Firestore = Firestore.firestore()
     
+    // MARK: Authentication
+    
+    func ensureAuthenticated() async throws {
+        if Auth.auth().currentUser == nil {
+            _ = try await Auth.auth().signInAnonymously()
+        }
+    }
+    
     // MARK: - Path configuration
     
     private var dataBasePath: String {
@@ -50,7 +60,7 @@ class FirestoreService : FirestoreServiceProtocol {
             return "households/\(householdKey)"
         }
         guard let uid = Auth.auth().currentUser?.uid else {
-            return "users/unknown"
+            fatalError("Firestore accessed before authentication completed")
         }
         return "users/\(uid)"
     }

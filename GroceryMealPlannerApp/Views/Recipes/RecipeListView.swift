@@ -24,6 +24,7 @@ struct RecipeListView: View {
     var body: some View {
         NavigationStack {
             content
+                .background(Color(.systemGray6))
                 .navigationTitle("Our Recipes")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
@@ -32,8 +33,9 @@ struct RecipeListView: View {
                         } label: {
                             Label("Add Recipe", systemImage: "plus")
                         }
-                        .tint(Color("Navy"))
-                        .buttonStyle(.glassProminent)
+                        .modifier(
+                            iOS26ButtonStyle()
+                        )
                     }
                 }
                 .sheet(isPresented: $showingAddRecipe) {
@@ -92,6 +94,8 @@ struct RecipeListView: View {
                     deleteRecipe(recipe)
                 }
             }
+        }.safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 16)
         }
     }
     

@@ -31,17 +31,26 @@ class AppDataStore: ObservableObject {
     
     init(service: FirestoreServiceProtocol = FirestoreService()) {
         self.firestoreService = service
-        startListening()
+        startistening()
     }
     
     deinit {
         stopListening()
     }
     
-    private func startListening() {
-        startGroceryListener()
-        startRecipeListener()
-        startWeeklyPlanListener()
+    private func startistening() {
+        Task {
+            do {
+                try await firestoreService.ensureAuthenticated()
+                startGroceryListener()
+                startRecipeListener()
+                startWeeklyPlanListener()
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication failed. Please close and reopen the app."
+                }
+            }
+        }
     }
     
     private func stopListening() {
@@ -60,6 +69,7 @@ class AppDataStore: ObservableObject {
         }, onError: { errorMessage in
             DispatchQueue.main.async {
                 self.errorMessage = errorMessage
+                self.groceryItems = []
             }
         })
     }
@@ -132,6 +142,7 @@ class AppDataStore: ObservableObject {
         }, onError: { errorMessage in
             DispatchQueue.main.async {
                 self.errorMessage = errorMessage
+                self.recipes = []
             }
         })
     }
@@ -178,6 +189,7 @@ class AppDataStore: ObservableObject {
         }, onError: { errorMessage in
             DispatchQueue.main.async {
                 self.errorMessage = errorMessage
+                self.weeklyPlans = []
             }
         })
     }

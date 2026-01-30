@@ -15,6 +15,10 @@ final class MockFirestoreService: FirestoreServiceProtocol {
     var groceryItems: [GroceryItem] = []
     var recipes: [Recipe] = []
     var weeklyPlans: [WeeklyPlan] = []
+    
+    func ensureAuthenticated() async throws {
+        // fake log in
+    }
 
     func observeGroceryItems(
         onUpdate: @escaping ([GroceryItem]) -> Void,

@@ -40,7 +40,7 @@ struct RecipeDetailView: View {
                         Label("Edit", systemImage: "pencil")
                     }
                     .tint(Color("Navy"))
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.borderless)
                     .accessibilityLabel("Edit this recipe")
 
                 }

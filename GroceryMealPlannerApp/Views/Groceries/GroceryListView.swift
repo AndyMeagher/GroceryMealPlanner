@@ -25,15 +25,16 @@ struct GroceryListView: View {
     var body: some View {
         NavigationStack {
             content
-                .background(Color(.systemGray6))
+            .background(Color(.systemGray6))
             .navigationTitle("Grocery List")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddItem = true }) {
                         Image(systemName: "plus")
                     }
-                    .tint(Color("Navy"))
-                    .buttonStyle(.glassProminent)
+                    .modifier(
+                        iOS26ButtonStyle()
+                    )
                     .accessibilityLabel("Add Grocery Item")
                 }
                 
@@ -116,6 +117,8 @@ struct GroceryListView: View {
                     deleteItem(item: item)
                 }
             }
+        }.safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 16)
         }
     }
     
