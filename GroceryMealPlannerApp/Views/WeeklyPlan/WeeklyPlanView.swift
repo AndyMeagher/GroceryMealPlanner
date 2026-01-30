@@ -91,27 +91,24 @@ struct WeeklyPlanView: View {
         }
     }
     
-    @ViewBuilder
     private var addGroceriesButton: some View {
-        if let assignedRecipes = thisWeeksRecipes, !assignedRecipes.isEmpty {
-            Button {
-                showGroceryPickerView = true
-            } label: {
-                VStack {
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Color.accentColor)
-                        .clipShape(Circle())
-                        .shadow(radius: 5)
-                    Text("Add to Grocery List")
-                }
+        Button {
+            showGroceryPickerView = true
+        } label: {
+            VStack {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(Color.accentColor)
+                    .clipShape(Circle())
+                    .shadow(radius: 5)
+                Text("Add to Grocery List")
             }
-            .frame(maxWidth: .infinity)
-            .accessibilityLabel("Add ingredients to Grocery List")
-            .padding()
         }
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel("Add ingredients to Grocery List")
+        .padding()
     }
     
     
