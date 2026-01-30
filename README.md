@@ -17,7 +17,7 @@ Originally built for my partner and I to manage meal planning and grocery shoppi
 	1.	Open the project in Xcode
 	2.	Build and run on a simulator or device
 
-_Note: Firebase should be preconfigured; no additional setup is required._
+_Note: Firebase should be preconfigured for demo purposes; no additional setup is required_
 
 ---
 
@@ -96,7 +96,7 @@ This app reflects how I approach real production code:
 
 This app was built in about a week, so many features and scalability improvements were limited by time. Given more time, I would focus on:
 	
-- **Full Authentication Layer** – Implement a proper login system to fully support shared household endpoints across multiple users.
+- **Full Authentication Layer** – Implement a proper login system to fully support shared household endpoints across multiple users. 
 
 - **Grocery Categorization** – Automatically classify items (Produce, Meat, Dairy, etc.) for better organization and easier shopping.
 
