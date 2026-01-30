@@ -42,7 +42,9 @@ struct RecipeListView: View {
                     AddRecipeView()
                 }
                 .sheet(item: $selectedRecipe) { recipe in
-                    RecipeDetailView(recipe: recipe)
+                    if let binding = dataStore.bindingForRecipe(id: recipe.id){
+                        RecipeDetailView(recipe: binding)
+                    }
                 }
         }
     }
@@ -53,6 +55,7 @@ struct RecipeListView: View {
     private var content: some View {
         if dataStore.recipes == nil {
             ProgressView("Loading recipes...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if recipes.isEmpty {
             ContentUnavailableView {
                 Label {
@@ -75,14 +78,18 @@ struct RecipeListView: View {
     private var recipeList: some View {
         List {
             ForEach(recipes) { recipe in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(recipe.name)
-                }
-                .padding(.vertical, 4)
-                .contentShape(Rectangle())
-                .onTapGesture {
+                Button {
                     selectedRecipe = recipe
+                } label: {
+                    HStack {
+                        Text(recipe.name)
+                        Spacer()
+                    }
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .listRowBackground(Color.white)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         deleteRecipe(recipe)

@@ -16,7 +16,7 @@ struct Recipe: Identifiable {
     var updatedAt: Date
     
     var slug: String {
-        return self.name.lowercased().replacingOccurrences(of: " ", with: "_")
+        return self.id
     }
     
     init(id: String = UUID().uuidString,

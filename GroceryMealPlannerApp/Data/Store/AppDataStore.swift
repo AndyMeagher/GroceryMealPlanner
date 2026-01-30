@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import Combine
+import SwiftUI
 
 class AppDataStore: ObservableObject {
     
@@ -164,6 +165,22 @@ class AppDataStore: ObservableObject {
         var updatedRecipe = recipe
         updatedRecipe.updatedAt = Date()
         await addRecipe(updatedRecipe)
+    }
+    
+    func bindingForRecipe(id: Recipe.ID) -> Binding<Recipe>? {
+        guard let recipes = recipes,
+              let index = recipes.firstIndex(where: { $0.id == id }) else {
+            return nil
+        }
+        
+        return Binding<Recipe>(
+            get: {
+                self.recipes![index]
+            },
+            set: { newValue in
+                self.recipes![index] = newValue
+            }
+        )
     }
     
     func deleteRecipe(_ recipe: Recipe) async {

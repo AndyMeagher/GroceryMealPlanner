@@ -14,7 +14,7 @@ struct RecipeDetailView: View {
     @EnvironmentObject var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
-    let recipe: Recipe
+    @Binding var recipe: Recipe
     @State private var isEditing = false
     
     // MARK: - Body
@@ -39,8 +39,9 @@ struct RecipeDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
-                    .tint(Color("Navy"))
-                    .buttonStyle(.borderless)
+                    .modifier(
+                        iOS26ButtonStyle()
+                    )
                     .accessibilityLabel("Edit this recipe")
 
                 }
@@ -52,7 +53,7 @@ struct RecipeDetailView: View {
                 }
             }
             .sheet(isPresented: $isEditing) {
-                EditRecipeView(recipe: recipe)
+                EditRecipeView(recipe: $recipe)
             }
         }
     }

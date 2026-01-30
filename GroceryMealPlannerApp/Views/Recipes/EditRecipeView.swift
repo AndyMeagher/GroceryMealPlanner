@@ -14,18 +14,18 @@ struct EditRecipeView: View {
     @EnvironmentObject var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
-    let recipe: Recipe
+    @Binding var recipe: Recipe
     
     @State private var name: String
     @State private var instructions: String
     @State private var ingredients: [Ingredient]
     @State private var isSaving = false
     
-    init(recipe: Recipe) {
-        self.recipe = recipe
-        _name = State(initialValue: recipe.name)
-        _instructions = State(initialValue: recipe.instructions)
-        _ingredients = State(initialValue: recipe.ingredients)
+    init(recipe: Binding<Recipe>) {
+        self._recipe = recipe
+        _name = State(initialValue: recipe.wrappedValue.name)
+        _instructions = State(initialValue: recipe.wrappedValue.instructions)
+        _ingredients = State(initialValue: recipe.wrappedValue.ingredients)
     }
     
     // MARK: - Body
@@ -35,7 +35,7 @@ struct EditRecipeView: View {
             Form {
                 nameSection
                 instructionsSection
-                instructionsSection
+                ingredientListSection
             }
             .navigationTitle("Edit Recipe")
             .navigationBarTitleDisplayMode(.inline)
@@ -107,14 +107,13 @@ struct EditRecipeView: View {
     private func saveChanges() {
         isSaving = true
         
-        var updatedRecipe = recipe
-        updatedRecipe.name = name
-        updatedRecipe.instructions = instructions
-        updatedRecipe.ingredients = ingredients
-        updatedRecipe.updatedAt = Date()
+        recipe.name = name
+        recipe.instructions = instructions
+        recipe.ingredients = ingredients
+        recipe.updatedAt = Date()
         
         Task {
-            await dataStore.updateRecipe(updatedRecipe)
+            await dataStore.updateRecipe(recipe)
             isSaving = false
             dismiss()
         }
