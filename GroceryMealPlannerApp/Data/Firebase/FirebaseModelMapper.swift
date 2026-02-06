@@ -85,6 +85,7 @@ struct FirebaseModelMapper {
         
         guard let name = data?["name"] as? String,
               let isChecked = data?["isChecked"] as? Bool,
+              let category = data?["category"] as? String,
               let createdAt = extractDate(from: data?["createdAt"]),
               let updatedAt = extractDate(from: data?["updatedAt"])  else {
             return nil
@@ -97,6 +98,7 @@ struct FirebaseModelMapper {
             name: name,
             quantity: quantity,
             isChecked: isChecked,
+            category: GroceryCategory(rawValue: category) ?? .Other,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
