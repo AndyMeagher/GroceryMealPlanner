@@ -15,7 +15,6 @@ struct AddGroceryItemView: View {
     @State private var name = ""
     @State private var quantity = ""
     let onAdd: (GroceryItem) -> Void
-    let categorizer = GroceryCategorizer()
 
     // MARK: - Body
     
@@ -37,12 +36,9 @@ struct AddGroceryItemView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        let category = categorizer.category(for: name)
-                    
                         let item = GroceryItem(
                             name: name,
-                            quantity: quantity,
-                            category: GroceryCategory(rawValue: category) ?? .Other
+                            quantity: quantity
                         )
                         onAdd(item)
                         dismiss()

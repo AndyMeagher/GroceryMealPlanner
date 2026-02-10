@@ -8,21 +8,19 @@
 import CoreML
 import NaturalLanguage
 
-class GroceryCategorizer {
+struct GroceryCategorizer {
 
-    private let nlModel: NLModel?
-
-    init() {
+    private static let nlModel: NLModel? = {
         do {
             let coreML = try GroceryTextClassifier(configuration: .init())
-            nlModel = try NLModel(mlModel: coreML.model)
+            return try NLModel(mlModel: coreML.model)
         } catch {
-            nlModel = nil
             print("Model load failed:", error)
+            return nil
         }
-    }
+    }()
 
-    func category(for phrase: String, threshold: Double = 0.6) -> String {
+    static func category(for phrase: String, threshold: Double = 0.5) -> String {
         guard let nlModel else {
             return "Other"
         }

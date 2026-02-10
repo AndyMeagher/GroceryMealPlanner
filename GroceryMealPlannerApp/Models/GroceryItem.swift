@@ -24,7 +24,7 @@ struct GroceryItem:  Identifiable{
          name: String,
          quantity: String? = nil,
          isChecked: Bool = false,
-         category: GroceryCategory = .Other,
+         categoryString: String? = nil,
          createdAt: Date = .now,
          updatedAt: Date = .now) {
         self.id = id
@@ -33,7 +33,13 @@ struct GroceryItem:  Identifiable{
         self.isChecked = isChecked
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.category = category
+        
+        if let categoryString {
+            self.category = GroceryCategory(rawValue: categoryString) ?? .Other
+        } else {
+            let catName = GroceryCategorizer.category(for: name)
+            self.category = GroceryCategory(rawValue: catName) ?? .Other
+        }
     }
 }
 
@@ -54,6 +60,4 @@ enum GroceryCategory: String, CaseIterable {
     case Meat_Seafood = "Meat & Seafood"
     case Household = "Household"
     case Other = "Other"
-    
-   
 }

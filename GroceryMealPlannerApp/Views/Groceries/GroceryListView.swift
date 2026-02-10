@@ -87,7 +87,11 @@ struct GroceryListView: View {
                 let itemsInCategory = groceryItems.filter { $0.category == category }
                 // Only show section if there are items
                 if !itemsInCategory.isEmpty {
-                    Section(header: Text(category.rawValue)) {
+                    Section(header:
+                                Text(category.rawValue)
+                        .foregroundStyle(.black)
+                        .font(AppFont.bold(size: 22))
+                    ) {
                         ForEach(itemsInCategory) { item in
                             Button(action: {
                                 updateItemIsChecked(item: item)
@@ -95,11 +99,11 @@ struct GroceryListView: View {
                                 HStack {
                                     Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                                         .foregroundColor(item.isChecked ? .green : .gray)
-                                    VStack(alignment: .leading) {
+                                    VStack(alignment: .center) {
                                         Text(item.name)
                                             .strikethrough(item.isChecked)
                                             .foregroundColor(.primary)
-                                        if let quantity = item.quantity {
+                                        if let quantity = item.quantity, !quantity.isEmpty{
                                             Text(quantity)
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
