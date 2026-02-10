@@ -99,7 +99,7 @@ struct GroceryListView: View {
                                 HStack {
                                     Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                                         .foregroundColor(item.isChecked ? .green : .gray)
-                                    VStack(alignment: .center) {
+                                    VStack(alignment: .leading) {
                                         Text(item.name)
                                             .strikethrough(item.isChecked)
                                             .foregroundColor(.primary)
