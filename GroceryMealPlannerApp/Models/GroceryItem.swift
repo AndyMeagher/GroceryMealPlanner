@@ -10,6 +10,7 @@ import Foundation
 struct GroceryItem:  Identifiable{
     let id: String
     var name: String
+    var category: GroceryCategory
     var quantity: String?
     var isChecked: Bool
     let createdAt: Date
@@ -23,6 +24,7 @@ struct GroceryItem:  Identifiable{
          name: String,
          quantity: String? = nil,
          isChecked: Bool = false,
+         categoryString: String? = nil,
          createdAt: Date = .now,
          updatedAt: Date = .now) {
         self.id = id
@@ -31,5 +33,31 @@ struct GroceryItem:  Identifiable{
         self.isChecked = isChecked
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        
+        if let categoryString {
+            self.category = GroceryCategory(rawValue: categoryString) ?? .Other
+        } else {
+            let catName = GroceryCategorizer.category(for: name)
+            self.category = GroceryCategory(rawValue: catName) ?? .Other
+        }
     }
+}
+
+enum GroceryCategory: String, CaseIterable {
+    case Pet_Supplies = "Pet Supplies"
+    case Dairy_Eggs = "Dairy & Eggs"
+    case Canned_Goods = "Canned Goods"
+    case Pasta_Grains = "Pasta & Grains"
+    case Pantry = "Pantry"
+    case Snacks = "Snacks"
+    case Produce = "Produce"
+    case Deli = "Deli"
+    case Bakery = "Bakery"
+    case Condiments_Sauces = "Condiments & Sauces"
+    case Beverages = "Beverages"
+    case Frozen_Foods = "Frozen Foods"
+    case Personal_Care = "Personal Care"
+    case Meat_Seafood = "Meat & Seafood"
+    case Household = "Household"
+    case Other = "Other"
 }

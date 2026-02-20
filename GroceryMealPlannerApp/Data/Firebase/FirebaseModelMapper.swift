@@ -91,12 +91,14 @@ struct FirebaseModelMapper {
         }
         
         let quantity = data?["quantity"] as? String
+        let categoryString = data?["category"] as? String
         
         return GroceryItem(
             id: doc.documentID,
             name: name,
             quantity: quantity,
             isChecked: isChecked,
+            categoryString: categoryString,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

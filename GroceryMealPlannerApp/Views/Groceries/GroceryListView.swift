@@ -82,42 +82,56 @@ struct GroceryListView: View {
     
     private var groceryList: some View {
         List {
-            ForEach(groceryItems) { item in
-                Button(action: {
-                    updateItemIsChecked(item: item)
-                }) {
-                    HStack {
-                        Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(item.isChecked ? .green : .gray)
-                        VStack(alignment: .leading) {
-                            Text(item.name)
-                                .strikethrough(item.isChecked)
-                                .foregroundColor(.primary)
-                            if let quantity = item.quantity {
-                                Text(quantity)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+            // Group items by category
+            ForEach(GroceryCategory.allCases, id: \.self) { category in
+                let itemsInCategory = groceryItems.filter { $0.category == category }
+                // Only show section if there are items
+                if !itemsInCategory.isEmpty {
+                    Section(header:
+                                Text(category.rawValue)
+                        .foregroundStyle(.black)
+                        .font(AppFont.bold(size: 22))
+                    ) {
+                        ForEach(itemsInCategory) { item in
+                            Button(action: {
+                                updateItemIsChecked(item: item)
+                            }) {
+                                HStack {
+                                    Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(item.isChecked ? .green : .gray)
+                                    VStack(alignment: .leading) {
+                                        Text(item.name)
+                                            .strikethrough(item.isChecked)
+                                            .foregroundColor(.primary)
+                                        if let quantity = item.quantity, !quantity.isEmpty{
+                                            Text(quantity)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                .accessibilityElement(children: .combine)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(item.name)
+                            .accessibilityValue(item.isChecked ? "Checked" : "Unchecked")
+                            .accessibilityAction(named: "Delete") {
+                                deleteItem(item: item)
                             }
                         }
-                        Spacer()
+                        .onDelete { offsets in
+                            offsets.forEach { index in
+                                let item = itemsInCategory[index]
+                                deleteItem(item: item)
+                            }
+                        }
                     }
-                    .accessibilityElement(children: .combine)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(item.name)
-                .accessibilityValue(item.isChecked ? "Checked" : "Unchecked")
-                .accessibilityAction(named: "Delete") {
-                    deleteItem(item: item)
                 }
             }
-            .onDelete { offsets in
-                offsets.forEach { index in
-                    let item = groceryItems[index]
-                    deleteItem(item: item)
-                }
-            }
-        }.safeAreaInset(edge: .top, spacing: 0) {
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
             Color.clear.frame(height: 16)
         }
     }

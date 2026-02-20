@@ -91,6 +91,7 @@ class FirestoreService : FirestoreServiceProtocol {
         var data: [String: Any] = [
             "name": item.name,
             "isChecked": item.isChecked,
+            "category": item.category.rawValue,
             "createdAt": Timestamp(date: item.createdAt),
             "updatedAt": Timestamp(date: item.updatedAt)
         ]
