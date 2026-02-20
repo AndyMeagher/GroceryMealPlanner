@@ -98,9 +98,6 @@ This app was built in about a week, so many features and scalability improvement
 	
 - **Full Authentication Layer** – Implement a proper login system to fully support shared household endpoints across multiple users. 
 
-- **Grocery Categorization** – Automatically classify items (Produce, Meat, Dairy, etc.) for better organization and easier shopping[^1].
-[^1]: Currently in-progress under the branch andy/grocery-categories. 
-
 - **Enhanced Error Handling** – Provide more robust feedback for network issues, permission errors, and data validation failures.
 
 - **Pagination & Performance** – Add lazy loading and pagination to efficiently handle large datasets.
