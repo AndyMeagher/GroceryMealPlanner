@@ -43,6 +43,12 @@ struct GroceryMealPlannerApp: App {
                             .environmentObject(dataStore)
                     )
             }
+            .onOpenURL { url in
+                guard url.scheme == "groceryplanner",
+                      url.host == "join",
+                      let code = url.pathComponents.dropFirst().first else { return }
+                Task { await dataStore.joinHousehold(code: code) }
+            }
         }
     }
 }

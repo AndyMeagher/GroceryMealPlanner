@@ -94,7 +94,7 @@ class FirestoreService : FirestoreServiceProtocol {
         let characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         let code = String((0..<7).map { _ in characters.randomElement()! })
         let data: [String: Any] = [
-            householdId: householdId,
+            "householdId": householdId,
             "createdBy": Auth.auth().currentUser!.uid,
             "expiresAt": Timestamp(date: .now.addingTimeInterval(72 * 60 * 60))
         ]
