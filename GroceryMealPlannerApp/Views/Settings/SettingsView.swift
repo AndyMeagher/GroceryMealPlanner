@@ -69,27 +69,41 @@ struct SettingsView: View {
     // MARK: - Join Section
 
     private var joinSection: some View {
-        Section {
-            TextField("Enter invite code", text: $joinCodeInput)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.characters)
-            Button {
-                joinWithCode()
-            } label: {
-                if isJoining {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                        Text("Joining...")
-                    }
-                } else {
-                    Text("Join Household")
-                }
+        Group {
+            Section {
+                TextField("Enter invite code", text: $joinCodeInput)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.characters)
+            } header: {
+                Text("Join a Household")
+            } footer: {
+                Text("Enter a code from someone else to share their grocery lists and meal plans.")
             }
-            .disabled(joinCodeInput.trimmingCharacters(in: .whitespaces).isEmpty || isJoining)
-        } header: {
-            Text("Join a Household")
-        } footer: {
-            Text("Enter a code from someone else to share their grocery lists and meal plans.")
+
+            Section {
+                Button {
+                    joinWithCode()
+                } label: {
+                    Group {
+                        if isJoining {
+                            HStack(spacing: 8) {
+                                ProgressView().tint(.white)
+                                Text("Joining...")
+                                    .font(AppFont.bold(size: 16))
+                            }
+                        } else {
+                            Text("Join Household")
+                                .font(AppFont.bold(size: 16))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color("Navy"))
+                .disabled(joinCodeInput.trimmingCharacters(in: .whitespaces).isEmpty || isJoining)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
+            }
         }
     }
 
