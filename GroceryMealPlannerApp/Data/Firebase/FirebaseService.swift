@@ -44,6 +44,7 @@ protocol FirestoreServiceProtocol {
 class FirestoreService : FirestoreServiceProtocol {
     
     private let dataBase: Firestore = Firestore.firestore()
+    private var householdId: String = ""
     
     // MARK: Authentication
     
@@ -51,18 +52,36 @@ class FirestoreService : FirestoreServiceProtocol {
         if Auth.auth().currentUser == nil {
             _ = try await Auth.auth().signInAnonymously()
         }
+        householdId = try await getOrCreateHouseholdId()
     }
+    
+    private func getOrCreateHouseholdId() async throws -> String {
+         if let id = KeychainHelper.getItem("householdId") {
+             return id
+         }
+
+         guard let uid = Auth.auth().currentUser?.uid else {
+             throw NSError(domain: "HouseholdError", code: 0, userInfo:
+     [NSLocalizedDescriptionKey: "Not authenticated"])
+         }
+
+         let newId = UUID().uuidString
+         let data: [String: Any] = [
+             "members": [uid],
+             "createdAt": Timestamp(date: .now),
+             "updatedAt": Timestamp(date: .now)
+         ]
+         try await dataBase.collection("households").document(newId).setData(data)
+
+         KeychainHelper.saveItem(newId, for: "householdId")
+
+         return newId
+     }
     
     // MARK: - Path configuration
     
     private var dataBasePath: String {
-        if let householdKey = KeychainHelper.getItem("andys_household_key") {
-            return "households/\(householdKey)"
-        }
-        guard let uid = Auth.auth().currentUser?.uid else {
-            fatalError("Firestore accessed before authentication completed")
-        }
-        return "users/\(uid)"
+        "households/\(householdId)"
     }
 
     
