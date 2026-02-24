@@ -13,6 +13,9 @@ protocol FirestoreServiceProtocol {
     
     func ensureAuthenticated() async throws
     
+    func generateInviteCode() async throws -> String
+    func joinHousehold(code: String) async throws
+    
     func observeGroceryItems(
         onUpdate: @escaping ([GroceryItem]) -> Void,
         onError: ((String) -> Void)?
@@ -42,6 +45,7 @@ protocol FirestoreServiceProtocol {
 }
 
 class FirestoreService : FirestoreServiceProtocol {
+  
     
     private let dataBase: Firestore = Firestore.firestore()
     private var householdId: String = ""
@@ -83,6 +87,47 @@ class FirestoreService : FirestoreServiceProtocol {
     private var dataBasePath: String {
         "households/\(householdId)"
     }
+    
+    // MARK: Invite Codes
+    
+    func generateInviteCode() async throws -> String {
+        let characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        let code = String((0..<7).map { _ in characters.randomElement()! })
+        let data: [String: Any] = [
+            householdId: householdId,
+            "createdBy": Auth.auth().currentUser!.uid,
+            "expiresAt": Timestamp(date: .now.addingTimeInterval(72 * 60 * 60))
+        ]
+        
+        try await dataBase.collection("invites").document(code).setData(data)
+        return code
+    }
+    
+    func joinHousehold(code: String) async throws {
+         guard let uid = Auth.auth().currentUser?.uid else {
+             throw NSError(domain: "HouseholdError", code: 0,
+                           userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+         }
+
+         let doc = try await
+     dataBase.collection("invites").document(code).getDocument()
+
+         guard doc.exists,
+               let data = doc.data(),
+               let newHouseholdId = data["householdId"] as? String,
+               let expiryTimestamp = data["expiresAt"] as? Timestamp,
+               expiryTimestamp.dateValue() > Date()
+         else {
+             throw NSError(domain: "HouseholdError", code: 1,
+                           userInfo: [NSLocalizedDescriptionKey: "Invalid or expired invite code"])
+         }
+
+         try await dataBase.collection("households").document(newHouseholdId)
+             .updateData(["members": FieldValue.arrayUnion([uid])])
+
+         KeychainHelper.saveItem(newHouseholdId, for: "householdId")
+         householdId = newHouseholdId
+     }
 
     
     // MARK: - Grocery Items Methods
