@@ -18,7 +18,7 @@ struct MainTabs: View {
                     Label("Weekly Plan", systemImage: "calendar")
                 }.accessibilityLabel("Weekly Plan Tab")
 
-            SettingsView()
+            HouseholdView()
                 .tabItem {
                     Label("Household", systemImage: "person.2")
                 }.accessibilityLabel("Household Tab")

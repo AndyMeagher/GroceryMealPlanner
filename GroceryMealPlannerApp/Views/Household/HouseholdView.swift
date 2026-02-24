@@ -1,11 +1,13 @@
 //
-//  SettingsView.swift
+//  HouseholdView.swift
 //  GroceryMealPlannerApp
+//
+//  Created by Andy M on 2/24/26.
 //
 
 import SwiftUI
 
-struct SettingsView: View {
+struct HouseholdView: View {
 
     @EnvironmentObject var dataStore: AppDataStore
 
@@ -134,6 +136,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
+    HouseholdView()
         .environmentObject(AppDataStore(service: MockFirestoreService()))
 }
