@@ -10,24 +10,16 @@ import FirebaseCore
 import FirebaseAuth
 import CoreML
 
-class AppDelegate: NSObject, UIApplicationDelegate {
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        FirebaseApp.configure()
-        return true
-    }
-}
-
 @main
 struct GroceryMealPlannerApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var dataStore: AppDataStore
+    @State private var dataStore: AppDataStore
 
     init() {
+        FirebaseApp.configure()
         if ProcessInfo.processInfo.arguments.contains("uitesting") {
-            _dataStore = StateObject(wrappedValue: AppDataStore(service: MockFirestoreService()))
+            _dataStore = State(wrappedValue: AppDataStore(service: MockFirestoreService()))
         } else {
-            _dataStore = StateObject(wrappedValue: AppDataStore())
+            _dataStore = State(wrappedValue: AppDataStore())
         }
         AppAppearance.configure()
     }
@@ -36,11 +28,11 @@ struct GroceryMealPlannerApp: App {
         WindowGroup {
             Group {
                 MainTabs()
-                    .environmentObject(dataStore)
                     .environment(\.font, AppFont.regular(size: 16))
+                    .environment(dataStore)
                     .overlay(
                         GlobalAlertToast()
-                            .environmentObject(dataStore)
+                            .environment(dataStore)
                     )
             }
         }

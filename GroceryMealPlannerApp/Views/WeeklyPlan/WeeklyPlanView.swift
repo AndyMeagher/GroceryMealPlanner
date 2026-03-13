@@ -11,7 +11,7 @@ struct WeeklyPlanView: View {
     
     // MARK: - Properties
     
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
     @State private var selectedDayForPicker: DayOfWeek?
     @State private var showGroceryPickerView: Bool = false
     
@@ -151,5 +151,5 @@ struct WeeklyPlanView: View {
 }
 
 #Preview {
-    WeeklyPlanView().environmentObject(AppDataStore(service: MockFirestoreService()))
+    WeeklyPlanView().environment(AppDataStore(service: MockFirestoreService()))
 }

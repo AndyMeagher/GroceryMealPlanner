@@ -14,7 +14,7 @@ struct GroceryListView: View {
     @State private var showingAddItem = false
     @State private var newItemName = ""
     @State private var newItemQuantity = ""
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
     
     var groceryItems : [GroceryItem] {
         return dataStore.groceryItems ?? []
@@ -167,7 +167,8 @@ struct GroceryListView: View {
 
 
 #Preview {
-    GroceryListView().environmentObject(AppDataStore(service: MockFirestoreService()))
+    GroceryListView()
+        .environment(AppDataStore(service: MockFirestoreService()))
 }
 
 

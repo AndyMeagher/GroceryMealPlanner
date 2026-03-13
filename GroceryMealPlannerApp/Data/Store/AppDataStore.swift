@@ -10,14 +10,16 @@ import FirebaseFirestore
 import Combine
 import SwiftUI
 
-class AppDataStore: ObservableObject {
+
+@Observable
+class AppDataStore {
     
     // MARK: - Properties
     
-    @Published var groceryItems: [GroceryItem]?
-    @Published var recipes: [Recipe]?
-    @Published var weeklyPlans: [WeeklyPlan]?
-    @Published var errorMessage: String?
+    var groceryItems: [GroceryItem]?
+    var recipes: [Recipe]?
+    var weeklyPlans: [WeeklyPlan]?
+    var errorMessage: String?
     
     var currentWeekPlan: WeeklyPlan? {
         weeklyPlans?.first

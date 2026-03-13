@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct GlobalAlertToast: View {
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
     @State private var showToast = false
 
     var body: some View {

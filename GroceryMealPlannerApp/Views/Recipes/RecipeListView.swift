@@ -11,7 +11,7 @@ struct RecipeListView: View {
     
     // MARK: - Properties
     
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
     @State private var showingAddRecipe = false
     @State private var selectedRecipe: Recipe?
     
@@ -115,5 +115,5 @@ struct RecipeListView: View {
 }
 
 #Preview {
-    RecipeListView().environmentObject(AppDataStore(service: MockFirestoreService()))
+    RecipeListView().environment(AppDataStore(service: MockFirestoreService()))
 }

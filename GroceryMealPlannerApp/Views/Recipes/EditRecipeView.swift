@@ -11,7 +11,7 @@ struct EditRecipeView: View {
     
     // MARK: Properties
     
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
     @Environment(\.dismiss) private var dismiss
     
     @Binding var recipe: Recipe
