@@ -34,14 +34,13 @@ class AppDataStore {
     
     init(service: FirestoreServiceProtocol = FirestoreService()) {
         self.firestoreService = service
-        startListening()
     }
     
     deinit {
         stopListening()
     }
     
-    private func startListening() {
+    func startListening() {
         Task {
             do {
                 try await firestoreService.ensureAuthenticated()
@@ -49,9 +48,7 @@ class AppDataStore {
                 startRecipeListener()
                 startWeeklyPlanListener()
             } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Authentication failed. Please close and reopen the app."
-                }
+                setErrorMessage(message: "Authentication failed. Please close and reopen the app.")
             }
         }
     }
@@ -62,17 +59,26 @@ class AppDataStore {
         planListener?.remove()
     }
     
+    
+    func setErrorMessage(message: String?){
+        Task { @MainActor [weak self] in
+            self?.errorMessage = message
+        }
+    }
+    
+    
     // MARK: - Grocery Item Methods
     
     private func startGroceryListener() {
-        groceryListener = firestoreService.observeGroceryItems(onUpdate: { groceryItems in
-            DispatchQueue.main.async {
-                self.groceryItems = groceryItems
-            }
+        groceryListener = firestoreService.observeGroceryItems(
+            onUpdate: { groceryItems in
+                Task { @MainActor [weak self] in
+                    self?.groceryItems = groceryItems
+                }
         }, onError: { errorMessage in
-            DispatchQueue.main.async {
-                self.errorMessage = errorMessage
-                self.groceryItems = []
+            Task { @MainActor [weak self] in
+                self?.groceryItems = []
+                self?.setErrorMessage(message: errorMessage)
             }
         })
     }
@@ -80,13 +86,9 @@ class AppDataStore {
     func addGroceryItem(_ item: GroceryItem) async {
         do {
             try await firestoreService.addGroceryItem(item)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to add grocery item: \(error.localizedDescription)"
-            }
+            setErrorMessage(message: "Failed to add grocery item: \(error.localizedDescription)")
         }
     }
     
@@ -99,39 +101,27 @@ class AppDataStore {
     func deleteGroceryItem(_ item: GroceryItem) async {
         do {
             try await firestoreService.deleteGroceryItem(item)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to delete grocery item: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to delete grocery item: \(error.localizedDescription)")
         }
     }
     
     func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async {
         do {
             try await firestoreService.addOrUpdateGroceryItems(with: ingredients)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to add ingredients to grocery list: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to add ingredients to grocery list: \(error.localizedDescription)")
         }
     }
     
     func deleteAllCheckedGroceryItems() async {
         do {
             try await firestoreService.deleteAllCheckedGroceryItems()
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to delete checked items: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to delete checked items: \(error.localizedDescription)")
         }
     }
     
@@ -139,13 +129,13 @@ class AppDataStore {
     
     private func startRecipeListener() {
         recipeListener = firestoreService.observeRecipes(onUpdate: { recipes in
-            DispatchQueue.main.async {
-                self.recipes = recipes
+            Task { @MainActor [weak self] in
+                self?.recipes = recipes
             }
         }, onError: { errorMessage in
-            DispatchQueue.main.async {
-                self.errorMessage = errorMessage
-                self.recipes = []
+            Task { @MainActor [weak self] in
+                self?.setErrorMessage(message: errorMessage)
+                self?.recipes = []
             }
         })
     }
@@ -153,13 +143,10 @@ class AppDataStore {
     func addRecipe(_ recipe: Recipe) async {
         do {
             try await firestoreService.addRecipe(recipe)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
+            
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to add recipe: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to add recipe: \(error.localizedDescription)")
         }
     }
     
@@ -188,13 +175,9 @@ class AppDataStore {
     func deleteRecipe(_ recipe: Recipe) async {
         do {
             try await firestoreService.deleteRecipe(recipe)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to delete recipe: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to delete recipe: \(error.localizedDescription)")
         }
     }
     
@@ -202,13 +185,13 @@ class AppDataStore {
     
     private func startWeeklyPlanListener() {
         planListener = firestoreService.observeWeeklyPlan(onUpdate: { weeklyPlans in
-            DispatchQueue.main.async {
-                self.weeklyPlans = weeklyPlans
+            Task { @MainActor [weak self] in
+                self?.weeklyPlans = weeklyPlans
             }
         }, onError: { errorMessage in
-            DispatchQueue.main.async {
-                self.errorMessage = errorMessage
-                self.weeklyPlans = []
+            Task { @MainActor [weak self] in
+                self?.setErrorMessage(message: errorMessage)
+                self?.weeklyPlans = []
             }
         })
     }
@@ -216,13 +199,9 @@ class AppDataStore {
     func saveWeeklyPlan(_ plan: WeeklyPlan) async {
         do {
             try await firestoreService.saveWeeklyPlan(plan)
-            DispatchQueue.main.async {
-                self.errorMessage = nil
-            }
+            self.setErrorMessage(message: nil)
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to save weekly plan: \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to save weekly plan: \(error.localizedDescription)")
         }
     }
 
@@ -232,9 +211,7 @@ class AppDataStore {
         do {
             return try await firestoreService.generateInviteCode()
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Failed to generate invite code. \(error.localizedDescription)"
-            }
+            self.setErrorMessage(message: "Failed to generate invite code. \(error.localizedDescription)")
             return nil
         }
     }
@@ -243,20 +220,17 @@ class AppDataStore {
     func joinHousehold(code: String) async -> Bool {
         do {
             try await firestoreService.joinHousehold(code: code)
-            DispatchQueue.main.async {
-                self.stopListening()
-                self.groceryItems = nil
-                self.recipes = nil
-                self.weeklyPlans = nil
-                self.startGroceryListener()
-                self.startRecipeListener()
-                self.startWeeklyPlanListener()
-            }
+            self.stopListening()
+            self.groceryItems = nil
+            self.recipes = nil
+            self.weeklyPlans = nil
+            self.startGroceryListener()
+            self.startRecipeListener()
+            self.startWeeklyPlanListener()
+            
             return true
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Invalid or expired invite code."
-            }
+            self.setErrorMessage(message: "Invalid or expired invite code.")
             return false
         }
     }

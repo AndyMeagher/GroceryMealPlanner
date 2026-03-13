@@ -47,7 +47,7 @@ protocol FirestoreServiceProtocol {
 class FirestoreService : FirestoreServiceProtocol {
   
     
-    private let dataBase: Firestore = Firestore.firestore()
+    private var dataBase: Firestore { Firestore.firestore() }
     private var householdId: String = ""
     
     // MARK: Authentication

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HouseholdView: View {
 
-    @EnvironmentObject var dataStore: AppDataStore
+    @Environment(AppDataStore.self) var dataStore: AppDataStore
 
     @State private var inviteCode: String?
     @State private var isGeneratingCode = false
@@ -137,5 +137,5 @@ struct HouseholdView: View {
 
 #Preview {
     HouseholdView()
-        .environmentObject(AppDataStore(service: MockFirestoreService()))
+        .environment(AppDataStore(service: MockFirestoreService()))
 }
