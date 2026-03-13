@@ -34,14 +34,14 @@ class AppDataStore {
     
     init(service: FirestoreServiceProtocol = FirestoreService()) {
         self.firestoreService = service
-        startistening()
+        startListening()
     }
     
     deinit {
         stopListening()
     }
     
-    private func startistening() {
+    private func startListening() {
         Task {
             do {
                 try await firestoreService.ensureAuthenticated()
@@ -223,6 +223,41 @@ class AppDataStore {
             DispatchQueue.main.async {
                 self.errorMessage = "Failed to save weekly plan: \(error.localizedDescription)"
             }
+        }
+    }
+
+    // MARK: - Household Methods
+
+    func generateInviteCode() async -> String? {
+        do {
+            return try await firestoreService.generateInviteCode()
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to generate invite code. \(error.localizedDescription)"
+            }
+            return nil
+        }
+    }
+
+    @discardableResult
+    func joinHousehold(code: String) async -> Bool {
+        do {
+            try await firestoreService.joinHousehold(code: code)
+            DispatchQueue.main.async {
+                self.stopListening()
+                self.groceryItems = nil
+                self.recipes = nil
+                self.weeklyPlans = nil
+                self.startGroceryListener()
+                self.startRecipeListener()
+                self.startWeeklyPlanListener()
+            }
+            return true
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Invalid or expired invite code."
+            }
+            return false
         }
     }
 }

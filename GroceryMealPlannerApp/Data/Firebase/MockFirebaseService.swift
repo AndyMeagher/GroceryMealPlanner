@@ -19,6 +19,9 @@ final class MockFirestoreService: FirestoreServiceProtocol {
     func ensureAuthenticated() async throws {
         // fake log in
     }
+    
+    func generateInviteCode() async throws -> String { return "MOCK123" }
+    func joinHousehold(code: String) async throws { }
 
     func observeGroceryItems(
         onUpdate: @escaping ([GroceryItem]) -> Void,
