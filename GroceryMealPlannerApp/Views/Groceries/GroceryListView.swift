@@ -15,7 +15,8 @@ struct GroceryListView: View {
     @State private var newItemName = ""
     @State private var newItemQuantity = ""
     @Environment(AppDataStore.self) var dataStore: AppDataStore
-    
+    @State private var editingItem : GroceryItem?
+
     var groceryItems : [GroceryItem] {
         return dataStore.groceryItems ?? []
     }
@@ -47,7 +48,6 @@ struct GroceryListView: View {
             .sheet(isPresented: $showingAddItem) {
                 AddGroceryItemView{ item in
                     addNewItem(item: item)
-                    
                 }
             }
         }
@@ -76,6 +76,13 @@ struct GroceryListView: View {
             .accessibilityLabel("No groceries yet. Tap + to add items.")
         } else {
             groceryList
+                .sheet(item: $editingItem) { item in
+                    let nonOptionalBinding = Binding<GroceryItem>(
+                            get: { $editingItem.wrappedValue ?? item },
+                            set: { $editingItem.wrappedValue = $0 }
+                        )
+                    EditGroceryItemView(groceryItem: nonOptionalBinding)
+                }
         }
 
     }
@@ -89,32 +96,40 @@ struct GroceryListView: View {
                 if !itemsInCategory.isEmpty {
                     Section(header:
                                 Text(category.rawValue)
-                        .foregroundStyle(.black)
                         .font(AppFont.bold(size: 22))
                     ) {
                         ForEach(itemsInCategory) { item in
-                            Button(action: {
-                                updateItemIsChecked(item: item)
-                            }) {
-                                HStack {
-                                    Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(item.isChecked ? .green : .gray)
-                                    VStack(alignment: .leading) {
-                                        Text(item.name)
-                                            .strikethrough(item.isChecked)
-                                            .foregroundColor(.primary)
-                                        if let quantity = item.quantity, !quantity.isEmpty{
-                                            Text(quantity)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
+                            HStack {
+                                Button(action: {
+                                    updateItemIsChecked(item: item)
+                                }) {
+                                    HStack {
+                                        Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(item.isChecked ? .green : .gray)
+                                        VStack(alignment: .leading) {
+                                            Text(item.name)
+                                                .strikethrough(item.isChecked)
+                                                .foregroundColor(.primary)
+                                            if let quantity = item.quantity, !quantity.isEmpty {
+                                                Text(quantity)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
                                         }
+                                        Spacer()
                                     }
-                                    Spacer()
+                                    .accessibilityElement(children: .combine)
+                                    .contentShape(Rectangle())
                                 }
-                                .accessibilityElement(children: .combine)
-                                .contentShape(Rectangle())
+
+                                Button(action: {
+                                    editingItem = item
+                                }) {
+                                    Image(systemName: "pencil")
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.borderless)
                             }
-                            .buttonStyle(.plain)
                             .accessibilityLabel(item.name)
                             .accessibilityValue(item.isChecked ? "Checked" : "Unchecked")
                             .accessibilityAction(named: "Delete") {
