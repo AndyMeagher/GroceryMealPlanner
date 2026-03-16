@@ -84,12 +84,12 @@ struct RecipeListView: View {
                     HStack {
                         Text(recipe.name)
                         Spacer()
+                        Image(systemName: "chevron.right")
                     }
                     .padding(.vertical, 10)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .listRowBackground(Color.white)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         deleteRecipe(recipe)
