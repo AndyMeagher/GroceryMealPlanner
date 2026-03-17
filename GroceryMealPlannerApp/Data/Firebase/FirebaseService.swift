@@ -190,7 +190,7 @@ class FirestoreService : FirestoreServiceProtocol {
             ]
             batch.setData(data, forDocument: docRef, merge: true)
 
-            let groceryItem = GroceryItem(name: item.name, quantity: item.quantity, isChecked: false)
+            let groceryItem = await GroceryItem.create(name: item.name, quantity: item.quantity, isChecked: false)
             results.append(groceryItem)
         }
 

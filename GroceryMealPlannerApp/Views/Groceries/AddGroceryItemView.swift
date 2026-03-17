@@ -36,12 +36,14 @@ struct AddGroceryItemView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        let item = GroceryItem(
-                            name: name,
-                            quantity: quantity
-                        )
-                        onAdd(item)
-                        dismiss()
+                        Task{
+                            let item = await GroceryItem.create(
+                                name: name,
+                                quantity: quantity
+                            )
+                            onAdd(item)
+                            dismiss()
+                        }
                     }
                     .disabled(name.isEmpty)
                 }

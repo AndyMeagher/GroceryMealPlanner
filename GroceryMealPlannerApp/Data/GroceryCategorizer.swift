@@ -5,34 +5,28 @@
 //  Created by Andy M on 2/6/26.
 //
 
-import CoreML
-import NaturalLanguage
+import Foundation
 
 struct GroceryCategorizer {
 
-    private static let nlModel: NLModel? = {
+    private static let functionURL = "https://us-central1-grocerymealplanner.cloudfunctions.net/getItemCategory"
+
+    static func category(for phrase: String) async -> GroceryCategory {
+        guard let url = URL(string: "\(functionURL)?name=\(phrase.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? phrase)") else {
+            return .unknown
+        }
+
         do {
-            let coreML = try GroceryTextClassifier(configuration: .init())
-            return try NLModel(mlModel: coreML.model)
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let json = try JSONDecoder().decode(AisleResponse.self, from: data)
+            return GroceryCategory(rawValue: json.aisle) ?? .unknown
         } catch {
-            print("Model load failed:", error)
-            return nil
+            print("GroceryCategorizer error:", error)
+            return .unknown
         }
-    }()
-
-    static func category(for phrase: String, threshold: Double = 0.5) -> String {
-        guard let nlModel else {
-            return "Other"
-        }
-
-        let hypotheses = nlModel.predictedLabelHypotheses(
-            for: phrase.lowercased(),
-            maximumCount: 1
-        )
-
-        guard let (label, confidence) = hypotheses.first else {
-            return "Other"
-        }
-        return confidence >= threshold ? label : "Other"
     }
+}
+
+private struct AisleResponse: Decodable {
+    let aisle: String
 }

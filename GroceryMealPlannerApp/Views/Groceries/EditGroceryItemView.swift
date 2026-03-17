@@ -79,7 +79,11 @@ struct EditGroceryItemView: View {
     
     private var categorySection: some View {
         Picker("Category", selection: $category) {
-            ForEach(GroceryCategory.allCases, id: \.self) { category in
+            ForEach(GroceryCategory.allCases.sorted {
+                if $1 == .unknown { return true }
+                if $0 == .unknown { return false }
+                return $0.rawValue < $1.rawValue
+            }, id: \.self) { category in
                 Text(category.rawValue).tag(category)
             }
         }

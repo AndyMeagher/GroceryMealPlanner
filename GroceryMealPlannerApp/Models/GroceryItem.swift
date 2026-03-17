@@ -24,7 +24,7 @@ struct GroceryItem:  Identifiable{
          name: String,
          quantity: String? = nil,
          isChecked: Bool = false,
-         categoryString: String? = nil,
+         category: GroceryCategory = .unknown,
          createdAt: Date = .now,
          updatedAt: Date = .now) {
         self.id = id
@@ -33,31 +33,63 @@ struct GroceryItem:  Identifiable{
         self.isChecked = isChecked
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        
-        if let categoryString {
-            self.category = GroceryCategory(rawValue: categoryString) ?? .Other
-        } else {
-            let catName = GroceryCategorizer.category(for: name)
-            self.category = GroceryCategory(rawValue: catName) ?? .Other
-        }
+        self.category = category
+    }
+    
+    static func create(
+        id: String = UUID().uuidString,
+        name: String,
+        quantity: String? = nil,
+        isChecked: Bool = false,
+        createdAt: Date = .now,
+        updatedAt: Date = .now
+    ) async -> GroceryItem {
+        let category = await GroceryCategorizer.category(for: name)
+        return GroceryItem(
+            id: id,
+            name: name,
+            quantity: quantity,
+            isChecked: isChecked,
+            category: category,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
     }
 }
 
-enum GroceryCategory: String, CaseIterable {
-    case Pet_Supplies = "Pet Supplies"
-    case Dairy_Eggs = "Dairy & Eggs"
-    case Canned_Goods = "Canned Goods"
-    case Pasta_Grains = "Pasta & Grains"
-    case Pantry = "Pantry"
-    case Snacks = "Snacks"
-    case Produce = "Produce"
-    case Deli = "Deli"
-    case Bakery = "Bakery"
-    case Condiments_Sauces = "Condiments & Sauces"
-    case Beverages = "Beverages"
-    case Frozen_Foods = "Frozen Foods"
-    case Personal_Care = "Personal Care"
-    case Meat_Seafood = "Meat & Seafood"
-    case Household = "Household"
-    case Other = "Other"
+enum GroceryCategory: String, CaseIterable, Codable {
+    case baking                    = "Baking"
+    case healthFoods               = "Health Foods"
+    case spicesAndSeasonings       = "Spices and Seasonings"
+    case pastaAndRice              = "Pasta and Rice"
+    case bakeryBread               = "Bakery/Bread"
+    case refrigerated              = "Refrigerated"
+    case cannedAndJarred           = "Canned and Jarred"
+    case frozen                    = "Frozen"
+    case nutButtersJamsAndHoney    = "Nut butters, Jams, and Honey"
+    case oilVinegarSaladDressing   = "Oil, Vinegar, Salad Dressing"
+    case condiments                = "Condiments"
+    case savorySnacks              = "Savory Snacks"
+    case milkEggsOtherDairy        = "Milk, Eggs, Other Dairy"
+    case ethnicFoods               = "Ethnic Foods"
+    case teaAndCoffee              = "Tea and Coffee"
+    case meat                      = "Meat"
+    case gourmet                   = "Gourmet"
+    case sweetSnacks               = "Sweet Snacks"
+    case glutenFree                = "Gluten Free"
+    case alcoholicBeverages        = "Alcoholic Beverages"
+    case cereal                    = "Cereal"
+    case nuts                      = "Nuts"
+    case beverages                 = "Beverages"
+    case produce                   = "Produce"
+    case seafood                   = "Seafood"
+    case cheese                    = "Cheese"
+    case driedFruits               = "Dried Fruits"
+    case grillingSupplies          = "Grilling Supplies"
+    case bread                     = "Bread"
+    case unknown                   = "Unknown"
+
+    init(from string: String) {
+        self = GroceryCategory(rawValue: string) ?? .unknown
+    }
 }
