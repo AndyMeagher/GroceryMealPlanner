@@ -9,7 +9,7 @@ const db = getFirestore();
 const CACHE_COLLECTION = "groceryItemCategoryCache";
 
 export const getItemCategory = onRequest(async (req, res) => {
-  const name = req.query.name as string;
+  const name = (req.query.name as string).trim().toLowerCase();
   const apiKey = process.env.SPOONACULAR_API_KEY;
 
   if (!name) {
@@ -17,7 +17,7 @@ export const getItemCategory = onRequest(async (req, res) => {
     return;
   }
 
-  const cacheKey = name.trim().toLowerCase();
+  const cacheKey = name;
   const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
 
   // 1. Check cache

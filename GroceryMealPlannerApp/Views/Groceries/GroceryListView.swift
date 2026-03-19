@@ -16,7 +16,7 @@ struct GroceryListView: View {
     @State private var newItemQuantity = ""
     @Environment(AppDataStore.self) var dataStore: AppDataStore
     @State private var editingItem : GroceryItem?
-
+    
     var groceryItems : [GroceryItem] {
         return dataStore.groceryItems ?? []
     }
@@ -26,30 +26,30 @@ struct GroceryListView: View {
     var body: some View {
         NavigationStack {
             content
-            .background(Color(.systemGray6))
-            .navigationTitle("Grocery List")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddItem = true }) {
-                        Image(systemName: "plus")
+                .background(Color(.systemGray6))
+                .navigationTitle("Grocery List")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: { showingAddItem = true }) {
+                            Image(systemName: "plus")
+                        }
+                        .modifier(
+                            iOS26ButtonStyle()
+                        )
+                        .accessibilityLabel("Add Grocery Item")
                     }
-                    .modifier(
-                        iOS26ButtonStyle()
-                    )
-                    .accessibilityLabel("Add Grocery Item")
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Clear Checked") {
-                        clearCheckedItems()
+                    
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Clear Checked") {
+                            clearCheckedItems()
+                        }
                     }
                 }
-            }
-            .sheet(isPresented: $showingAddItem) {
-                AddGroceryItemView{ item in
-                    addNewItem(item: item)
+                .sheet(isPresented: $showingAddItem) {
+                    AddGroceryItemView{ item in
+                        addNewItem(item: item)
+                    }
                 }
-            }
         }
     }
     
@@ -78,13 +78,13 @@ struct GroceryListView: View {
             groceryList
                 .sheet(item: $editingItem) { item in
                     let nonOptionalBinding = Binding<GroceryItem>(
-                            get: { $editingItem.wrappedValue ?? item },
-                            set: { $editingItem.wrappedValue = $0 }
-                        )
+                        get: { $editingItem.wrappedValue ?? item },
+                        set: { $editingItem.wrappedValue = $0 }
+                    )
                     EditGroceryItemView(groceryItem: nonOptionalBinding)
                 }
         }
-
+        
     }
     
     private var groceryList: some View {
@@ -95,8 +95,8 @@ struct GroceryListView: View {
                 // Only show section if there are items
                 if !itemsInCategory.isEmpty {
                     Section(header:
-                                Text(category.rawValue)
-                        .font(AppFont.bold(size: 22))
+                                category != .unknown ? Text(category.rawValue)
+                        .font(AppFont.bold(size: 22)) : nil
                     ) {
                         ForEach(itemsInCategory) { item in
                             HStack {
@@ -121,7 +121,7 @@ struct GroceryListView: View {
                                     .accessibilityElement(children: .combine)
                                     .contentShape(Rectangle())
                                 }
-
+                                
                                 Button(action: {
                                     editingItem = item
                                 }) {
