@@ -17,22 +17,18 @@ struct GroceryItem: Identifiable, Codable{
     let createdAt: Date
     var updatedAt: Date
     
-    static func create(
-        name: String,
-        quantity: String? = nil,
-        isChecked: Bool = false,
-        createdAt: Date = .now,
-        updatedAt: Date = .now
-    ) async -> GroceryItem {
-        let category = await GroceryCategorizer.category(for: name)
-        return GroceryItem(
-            name: name,
-            category: category,
-            quantity: quantity,
-            isChecked: isChecked,
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
+    init(name: String,
+         quantity: String?,
+         isChecked: Bool = false,
+         category: GroceryCategory = .unknown,
+         createdAt: Date = .now,
+         updatedAt: Date = .now){
+        self.name = name
+        self.quantity = quantity
+        self.isChecked = isChecked
+        self.category = category
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }
 
@@ -68,7 +64,7 @@ enum GroceryCategory: String, CaseIterable, Codable {
     case grillingSupplies          = "Grilling Supplies"
     case bread                     = "Bread"
     case unknown                   = "Unknown"
-
+    
     init(from string: String) {
         self = GroceryCategory(rawValue: string) ?? .unknown
     }

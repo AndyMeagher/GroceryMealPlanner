@@ -175,7 +175,7 @@ class FirestoreService : FirestoreServiceProtocol {
         let batch = dataBase.batch()
         for item in ingredients {
             let docRef = dataBase.collection("\(dataBasePath)/groceries").document(item.id)
-            let groceryItem = await GroceryItem.create(name: item.name, quantity: item.quantity, isChecked: false)
+            let groceryItem = GroceryItem(name: item.name, quantity: item.quantity, isChecked: false)
             
             try batch.setData(from: groceryItem, forDocument: docRef, merge: true)
             

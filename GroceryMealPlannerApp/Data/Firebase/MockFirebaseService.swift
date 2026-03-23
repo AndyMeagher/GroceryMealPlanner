@@ -47,7 +47,7 @@ final class MockFirestoreService: FirestoreServiceProtocol {
     
     func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws  {
         let items = ingredients.map { Ingredient in
-            GroceryItem(name: Ingredient.name, category: .unknown, quantity: Ingredient.quantity, isChecked: false, createdAt: .now, updatedAt: .now)
+            GroceryItem(name: Ingredient.name, quantity: Ingredient.quantity, )
         }
         groceryItems.append(contentsOf: items)
     }

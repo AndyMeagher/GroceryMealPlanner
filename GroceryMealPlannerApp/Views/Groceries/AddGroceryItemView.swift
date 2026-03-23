@@ -37,7 +37,7 @@ struct AddGroceryItemView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         Task{
-                            let item = await GroceryItem.create(
+                            let item = GroceryItem(
                                 name: name,
                                 quantity: quantity
                             )
