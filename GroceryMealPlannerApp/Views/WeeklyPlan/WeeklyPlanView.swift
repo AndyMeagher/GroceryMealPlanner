@@ -120,7 +120,7 @@ struct WeeklyPlanView: View {
     private func loadOrCreateWeeklyPlanIfNeeded() {
         // Only create if it doesn't exist
         if dataStore.currentWeekPlan == nil {
-            let newPlan = WeeklyPlan(weekOf: Date().startOfWeek())
+            let newPlan = WeeklyPlan(weekOf:  Date().startOfWeek(), meals: [:])
             Task {
                 await dataStore.saveWeeklyPlan(newPlan)
             }

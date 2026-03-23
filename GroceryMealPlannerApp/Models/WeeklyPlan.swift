@@ -6,29 +6,24 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
-struct WeeklyPlan: Identifiable {
-    let id: String
+struct WeeklyPlan: Codable, Identifiable {
+    @DocumentID var id: String?
     var weekOf: Date
     var meals: [DayOfWeek: PlannedMeal]
     let createdAt: Date
     var updatedAt: Date
     
-    init(id: String = UUID().uuidString,
-         weekOf: Date,
+    init(weekOf: Date,
          meals: [DayOfWeek: PlannedMeal] = [:],
          createdAt: Date = .now,
          updatedAt: Date = .now) {
         
-        self.id = id
         self.weekOf = weekOf
         self.meals = meals
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-    }
-    
-    var slug: String {
-        return self.id
     }
     
     func thisWeeksRecipes(from allRecipes: [Recipe]) -> [Recipe] {
@@ -38,19 +33,19 @@ struct WeeklyPlan: Identifiable {
                 return nil
             }
         )
-        return allRecipes.filter { ids.contains($0.id)}
+        return allRecipes.filter { ids.contains($0.id ?? "")}
     }
 }
     
 enum PlannedMeal: Codable, Equatable {
-    case recipe(id: String)
+    case recipe(id: String?)
     case leftovers
     case takeout
     
     func stringValue() -> String {
         switch self {
         case .recipe(id: let id):
-            return id
+            return id ?? ""
         case .leftovers:
             return "leftovers"
         case .takeout:

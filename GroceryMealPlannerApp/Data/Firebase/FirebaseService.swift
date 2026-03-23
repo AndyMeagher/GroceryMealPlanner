@@ -26,7 +26,7 @@ protocol FirestoreServiceProtocol {
     func deleteGroceryItem(_ item: GroceryItem) async throws
     func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws
     func deleteAllCheckedGroceryItems() async throws
-        
+    
     func observeRecipes(
         onUpdate: @escaping ([Recipe]) -> Void,
         onError: ((String) -> Void)?
@@ -35,7 +35,7 @@ protocol FirestoreServiceProtocol {
     func addRecipe(_ recipe: Recipe) async throws
     func updateRecipe(_ recipe: Recipe) async throws
     func deleteRecipe(_ recipe: Recipe) async throws
-        
+    
     func observeWeeklyPlan(
         onUpdate: @escaping ([WeeklyPlan]) -> Void,
         onError: ((String) -> Void)?
@@ -45,7 +45,7 @@ protocol FirestoreServiceProtocol {
 }
 
 class FirestoreService : FirestoreServiceProtocol {
-  
+    
     
     private var dataBase: Firestore { Firestore.firestore() }
     private var householdId: String = ""
@@ -60,27 +60,22 @@ class FirestoreService : FirestoreServiceProtocol {
     }
     
     private func getOrCreateHouseholdId() async throws -> String {
-         if let id = KeychainHelper.getItem("householdId") {
-             return id
-         }
-
-         guard let uid = Auth.auth().currentUser?.uid else {
-             throw NSError(domain: "HouseholdError", code: 0, userInfo:
-     [NSLocalizedDescriptionKey: "Not authenticated"])
-         }
-
-         let newId = UUID().uuidString
-         let data: [String: Any] = [
-             "members": [uid],
-             "createdAt": Timestamp(date: .now),
-             "updatedAt": Timestamp(date: .now)
-         ]
-         try await dataBase.collection("households").document(newId).setData(data)
-
-         KeychainHelper.saveItem(newId, for: "householdId")
-
-         return newId
-     }
+        if let id = KeychainHelper.getItem("householdId") {
+            return id
+        }
+        
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "HouseholdError", code: 0, userInfo:
+                            [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+        
+        let newHouseHold = Household(members: [uid], createdAt: .now, updatedAt: .now)
+        let ref = try dataBase.collection("households").addDocument(from: newHouseHold)
+        
+        KeychainHelper.saveItem(ref.documentID, for: "householdId")
+        
+        return ref.documentID
+    }
     
     // MARK: - Path configuration
     
@@ -93,42 +88,37 @@ class FirestoreService : FirestoreServiceProtocol {
     func generateInviteCode() async throws -> String {
         let characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         let code = String((0..<7).map { _ in characters.randomElement()! })
-        let data: [String: Any] = [
-            "householdId": householdId,
-            "createdBy": Auth.auth().currentUser!.uid,
-            "expiresAt": Timestamp(date: .now.addingTimeInterval(72 * 60 * 60))
-        ]
         
-        try await dataBase.collection("invites").document(code).setData(data)
+        let invite = HouseholdInvite(
+            householdId: householdId,
+            createdBy: Auth.auth().currentUser!.uid,
+            expiresAt: .now.addingTimeInterval(72 * 3600)
+        )
+        
+        try dataBase.collection("invites").document(code).setData(from: invite)
         return code
     }
-    
+
     func joinHousehold(code: String) async throws {
-         guard let uid = Auth.auth().currentUser?.uid else {
-             throw NSError(domain: "HouseholdError", code: 0,
-                           userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
-         }
-
-         let doc = try await
-     dataBase.collection("invites").document(code).getDocument()
-
-         guard doc.exists,
-               let data = doc.data(),
-               let newHouseholdId = data["householdId"] as? String,
-               let expiryTimestamp = data["expiresAt"] as? Timestamp,
-               expiryTimestamp.dateValue() > Date()
-         else {
-             throw NSError(domain: "HouseholdError", code: 1,
-                           userInfo: [NSLocalizedDescriptionKey: "Invalid or expired invite code"])
-         }
-
-         try await dataBase.collection("households").document(newHouseholdId)
-             .updateData(["members": FieldValue.arrayUnion([uid])])
-
-         KeychainHelper.saveItem(newHouseholdId, for: "householdId")
-         householdId = newHouseholdId
-     }
-
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw HouseholdError.notAuthenticated
+        }
+        
+        let doc = try await dataBase.collection("invites").document(code).getDocument()
+        let invite = try doc.data(as: HouseholdInvite.self)
+        
+        guard invite.expiresAt > .now else {
+            throw HouseholdError.invalidOrExpiredCode
+        }
+        
+        try await dataBase.collection("households").document(invite.householdId)
+            .updateData(["members": FieldValue.arrayUnion([uid])])
+        try await dataBase.collection("invites").document(code).delete()
+        
+        KeychainHelper.saveItem(invite.householdId, for: "householdId")
+        householdId = invite.householdId
+    }
+    
     
     // MARK: - Grocery Items Methods
     
@@ -144,56 +134,54 @@ class FirestoreService : FirestoreServiceProtocol {
                     return
                 }
                 
-                let items = snapshot?.documents.compactMap {
-                                FirebaseModelMapper.parseGroceryItem(from: $0)
-                            } ?? []
+                let items: [GroceryItem] = snapshot?.documents.compactMap { snapshot in
+                    
+                    do {
+                        return try snapshot.data(as: GroceryItem.self)
+                    } catch {
+                        onError?("Failed to decode item: \(error.localizedDescription)")
+                        return nil
+                    }
+                } ?? []
                 onUpdate(items)
             }
     }
-
-    func addGroceryItem(_ item: GroceryItem) async throws {
-        var data: [String: Any] = [
-            "name": item.name,
-            "isChecked": item.isChecked,
-            "category": item.category.rawValue,
-            "createdAt": Timestamp(date: item.createdAt),
-            "updatedAt": Timestamp(date: item.updatedAt)
-        ]
-        if let quantity = item.quantity {
-            data["quantity"] = quantity
+    
+    func addGroceryItem(_ item: GroceryItem) throws {
+        if let id = item.id{
+            try dataBase.collection("\(dataBasePath)/groceries").document(id).setData(from: item, merge: true)
+        }else{
+            try dataBase.collection("\(dataBasePath)/groceries").addDocument(from: item)
         }
-        try await dataBase.collection("\(dataBasePath)/groceries").document(item.slug).setData(data, merge: true)
     }
-
+    
     func updateGroceryItem(_ item: GroceryItem) async throws  {
         var updatedItem = item
         updatedItem.updatedAt = Date()
-        try await addGroceryItem(updatedItem)
+        try addGroceryItem(updatedItem)
     }
-
+    
     func deleteGroceryItem(_ item: GroceryItem) async throws {
-        try await dataBase.collection("\(dataBasePath)/groceries").document(item.slug).delete()
+        guard let id = item.id else {
+            print("No ID for grocery Item")
+            return
+        }
+        try await dataBase.collection("\(dataBasePath)/groceries").document(id).delete()
     }
-
+    
     func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws {
         var results: [GroceryItem] = []
-
+        
         let batch = dataBase.batch()
         for item in ingredients {
-            let docRef = dataBase.collection("\(dataBasePath)/groceries").document(item.slug)
-            let data: [String: Any] = [
-                "name": item.name,
-                "isChecked": false,
-                "quantity": item.quantity,
-                "createdAt": Timestamp(date: .now),
-                "updatedAt": Timestamp(date: .now)
-            ]
-            batch.setData(data, forDocument: docRef, merge: true)
-
+            let docRef = dataBase.collection("\(dataBasePath)/groceries").document(item.id)
             let groceryItem = await GroceryItem.create(name: item.name, quantity: item.quantity, isChecked: false)
+            
+            try batch.setData(from: groceryItem, forDocument: docRef, merge: true)
+            
             results.append(groceryItem)
         }
-
+        
         try await batch.commit()
     }
     
@@ -213,7 +201,7 @@ class FirestoreService : FirestoreServiceProtocol {
         }
         try await batch.commit()
     }
-
+    
     // MARK: - Recipes
     
     func observeRecipes(
@@ -228,38 +216,40 @@ class FirestoreService : FirestoreServiceProtocol {
                     return
                 }
                 
-                let items = snapshot?.documents.compactMap { doc in
-                    FirebaseModelMapper.parseRecipe(from: doc)
+                let items: [Recipe] = snapshot?.documents.compactMap { snapshot in
+                    do {
+                        return try snapshot.data(as: Recipe.self)
+                    } catch {
+                        onError?("Failed to decode item: \(error.localizedDescription)")
+                        return nil
+                    }
                 } ?? []
                 onUpdate(items)
             }
     }
-
-    func addRecipe(_ recipe: Recipe) async throws {
-        let data: [String: Any] = [
-            "name": recipe.name,
-            "instructions": recipe.instructions,
-            "ingredients": recipe.ingredients.map { [
-                "id": $0.id,
-                "name": $0.name,
-                "quantity": $0.quantity
-            ]},
-            "createdAt": Timestamp(date: recipe.createdAt),
-            "updatedAt": Timestamp(date: recipe.updatedAt)
-        ]
-        try await dataBase.collection("\(dataBasePath)/recipes").document(recipe.slug).setData(data)
+    
+    func addRecipe(_ recipe: Recipe) throws {
+        if let id = recipe.id{
+            try dataBase.collection("\(dataBasePath)/recipes").document(id).setData(from: recipe)
+        }else{
+            try dataBase.collection("\(dataBasePath)/recipes").addDocument(from: recipe)
+        }
     }
-
-    func updateRecipe(_ recipe: Recipe) async throws {
+    
+    func updateRecipe(_ recipe: Recipe) throws {
         var updatedRecipe = recipe
         updatedRecipe.updatedAt = Date()
-        try await addRecipe(updatedRecipe)
+        try addRecipe(updatedRecipe)
     }
-
+    
     func deleteRecipe(_ recipe: Recipe) async throws {
-        try await dataBase.collection("\(dataBasePath)/recipes").document(recipe.slug).delete()
+        guard let id = recipe.id else {
+            print("No ID for recipe")
+            return
+        }
+        try await dataBase.collection("\(dataBasePath)/recipes").document(id).delete()
     }
-
+    
     // MARK: - WeeklyPlan
     
     func observeWeeklyPlan(
@@ -267,7 +257,7 @@ class FirestoreService : FirestoreServiceProtocol {
         onError: ((String) -> Void)? = nil
     ) -> ListenerRegistration? {
         let startOfWeek = Date().startOfWeek()
-
+        
         return dataBase.collection("\(dataBasePath)/weeklyPlans")
             .whereField("weekOf", isGreaterThanOrEqualTo: Timestamp(date: startOfWeek))
             .limit(to: 1)
@@ -276,26 +266,24 @@ class FirestoreService : FirestoreServiceProtocol {
                     onError?("Error loading weekly plans: \(error.localizedDescription)")
                     return
                 }
-                var weeklyPlans : [WeeklyPlan] = []
-                if let document = snapshot?.documents.first,
-                   let plan = FirebaseModelMapper.parseWeeklyPlan(from: document) {
-                    weeklyPlans = [plan]
-                }
+                let weeklyPlans: [WeeklyPlan] = snapshot?.documents.compactMap { snapshot in
+                    do {
+                        return try snapshot.data(as: WeeklyPlan.self)
+                    } catch {
+                        onError?("Failed to decode item: \(error.localizedDescription)")
+                        return nil
+                    }
+                } ?? []
+                
                 onUpdate(weeklyPlans)
             }
     }
     
-    func saveWeeklyPlan(_ plan: WeeklyPlan) async throws {
-        var mealsDict: [String: String] = [:]
-        for (day, meal) in plan.meals {
-            mealsDict[day.rawValue] = meal.stringValue()
+    func saveWeeklyPlan(_ plan: WeeklyPlan) throws {
+        if let id = plan.id{
+            try dataBase.collection("\(dataBasePath)/weeklyPlans").document(id).setData(from: plan, merge: true)
+        }else{
+            try dataBase.collection("\(dataBasePath)/weeklyPlans").addDocument(from: plan)
         }
-        let data: [String: Any] = [
-            "weekOf": Timestamp(date: plan.weekOf),
-            "meals": mealsDict,
-            "createdAt": Timestamp(date: plan.createdAt),
-            "updatedAt": Timestamp(date: Date())
-        ]
-        try await dataBase.collection("\(dataBasePath)/weeklyPlans").document(plan.slug).setData(data)
     }
 }

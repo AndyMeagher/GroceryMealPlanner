@@ -6,27 +6,22 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
-struct Recipe: Identifiable {
-    let id: String
+struct Recipe: Identifiable, Codable {
+    @DocumentID var id: String?
     var name: String
     var instructions: String
     var ingredients: [Ingredient]
     let createdAt: Date
     var updatedAt: Date
     
-    var slug: String {
-        return self.id
-    }
-    
-    init(id: String = UUID().uuidString,
-         name: String,
+    init(name: String,
          instructions: String,
          ingredients: [Ingredient] = [],
          createdAt: Date = .now,
          updatedAt: Date = .now) {
         
-        self.id = id
         self.name = name
         self.instructions = instructions
         self.ingredients = ingredients
@@ -35,7 +30,7 @@ struct Recipe: Identifiable {
     }
 }
 
-struct Ingredient: Hashable, Identifiable {
+struct Ingredient: Codable, Identifiable, Hashable {
     var id: String = UUID().uuidString
     var name: String
     var quantity: String

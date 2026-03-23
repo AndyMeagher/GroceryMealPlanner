@@ -6,9 +6,10 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
-struct GroceryItem:  Identifiable{
-    let id: String
+struct GroceryItem: Identifiable, Codable{
+    @DocumentID var id: String?
     var name: String
     var category: GroceryCategory
     var quantity: String?
@@ -16,28 +17,7 @@ struct GroceryItem:  Identifiable{
     let createdAt: Date
     var updatedAt: Date
     
-    var slug: String {
-        return self.id
-    }
-    
-    init(id: String = UUID().uuidString,
-         name: String,
-         quantity: String? = nil,
-         isChecked: Bool = false,
-         category: GroceryCategory = .unknown,
-         createdAt: Date = .now,
-         updatedAt: Date = .now) {
-        self.id = id
-        self.name = name
-        self.quantity = quantity
-        self.isChecked = isChecked
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.category = category
-    }
-    
     static func create(
-        id: String = UUID().uuidString,
         name: String,
         quantity: String? = nil,
         isChecked: Bool = false,
@@ -46,17 +26,17 @@ struct GroceryItem:  Identifiable{
     ) async -> GroceryItem {
         let category = await GroceryCategorizer.category(for: name)
         return GroceryItem(
-            id: id,
             name: name,
+            category: category,
             quantity: quantity,
             isChecked: isChecked,
-            category: category,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
     }
 }
 
+// Taken from Spoontacular API Aisle properties
 enum GroceryCategory: String, CaseIterable, Codable {
     case baking                    = "Baking"
     case healthFoods               = "Health Foods"
