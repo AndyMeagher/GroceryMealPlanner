@@ -17,7 +17,7 @@ Originally built for my partner and I to manage meal planning and grocery shoppi
 	1.	Open the project in Xcode
 	2.	Build and run on a simulator or device
 
-_Note: Firebase should be preconfigured for demo purposes; no additional setup is required_
+_Note: Needs GoogleServices-Plist file 
 
 ---
 
