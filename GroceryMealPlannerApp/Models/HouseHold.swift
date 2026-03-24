@@ -10,9 +10,15 @@ import FirebaseFirestore
 
 struct Household: Identifiable, Codable {
     @DocumentID var id: String?
-    var members: [String] // members UUIDs
+    var ownerId: String
+    var members: [String] // member UIDs
     var createdAt: Date
     var updatedAt: Date
+}
+
+struct UserProfile: Identifiable, Codable {
+    @DocumentID var id: String?
+    var displayName: String
 }
 
 struct HouseholdInvite: Codable {

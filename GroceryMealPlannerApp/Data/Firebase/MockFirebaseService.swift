@@ -16,10 +16,22 @@ final class MockFirestoreService: FirestoreServiceProtocol {
     var recipes: [Recipe] = []
     var weeklyPlans: [WeeklyPlan] = []
     
-    func ensureAuthenticated() async throws {
-        // fake log in
+    func setupHousehold() async throws { }
+
+    func saveUserProfile(displayName: String) async throws { }
+
+    func observeHousehold(
+        onUpdate: @escaping (Household) -> Void,
+        onError: ((String) -> Void)? = nil
+    ) -> ListenerRegistration? {
+        onUpdate(Household(ownerId: "mock-uid", members: ["mock-uid"], createdAt: .now, updatedAt: .now))
+        return nil
     }
-    
+
+    func fetchHouseholdMembers(memberIds: [String]) async throws -> [UserProfile] {
+        return [UserProfile(displayName: "Mock User")]
+    }
+
     func generateInviteCode() async throws -> String { return "MOCK123" }
     func joinHousehold(code: String) async throws { }
 

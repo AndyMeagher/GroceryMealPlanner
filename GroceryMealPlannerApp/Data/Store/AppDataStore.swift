@@ -7,8 +7,10 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 import Combine
 import SwiftUI
+import AuthenticationServices
 
 
 @Observable
@@ -16,6 +18,15 @@ class AppDataStore {
     
     // MARK: - Properties
     
+    var user: User?
+    var household: Household?
+    var householdMembers: [UserProfile] = []
+
+    var isHouseholdOwner: Bool {
+        guard let uid = user?.uid, let household else { return false }
+        return household.ownerId == uid
+    }
+
     var groceryItems: [GroceryItem]?
     var recipes: [Recipe]?
     var weeklyPlans: [WeeklyPlan]?
@@ -26,10 +37,13 @@ class AppDataStore {
     }
     
     private let firestoreService: FirestoreServiceProtocol
-
+    
     private var groceryListener: ListenerRegistration?
     private var recipeListener: ListenerRegistration?
     private var planListener: ListenerRegistration?
+    private var householdListener: ListenerRegistration?
+
+    private var authStateHandle: AuthStateDidChangeListenerHandle!
     
     
     init(service: FirestoreServiceProtocol = FirestoreService()) {
@@ -38,15 +52,18 @@ class AppDataStore {
     
     deinit {
         stopListening()
+        Auth.auth().removeStateDidChangeListener(authStateHandle)
     }
     
     func startListening() {
+        guard groceryListener == nil, recipeListener == nil, planListener == nil else { return }
         Task {
             do {
-                try await firestoreService.ensureAuthenticated()
+                try await firestoreService.setupHousehold()
                 startGroceryListener()
                 startRecipeListener()
                 startWeeklyPlanListener()
+                startHouseholdListener()
             } catch {
                 setErrorMessage(message: "Authentication failed. Please close and reopen the app.")
             }
@@ -57,6 +74,7 @@ class AppDataStore {
         groceryListener?.remove()
         recipeListener?.remove()
         planListener?.remove()
+        householdListener?.remove()
     }
     
     
@@ -66,6 +84,47 @@ class AppDataStore {
         }
     }
     
+    // MARK: - Auth State
+    
+    func configureAuthStateChanges() {
+        authStateHandle = Auth.auth().addStateDidChangeListener { _, user in
+            self.user = user
+        }
+    }
+
+    func signInWithApple(credential: ASAuthorizationAppleIDCredential, nonce: String) async {
+        guard let appleIDToken = credential.identityToken,
+              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+            setErrorMessage(message: "Apple Sign In failed: invalid token.")
+            return
+        }
+        
+        let firebaseCredential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: credential.fullName
+        )
+
+        do {
+            let result = try await Auth.auth().signIn(with: firebaseCredential)
+            let displayName = credential.fullName?.givenName ?? credential.email ?? "User"
+            let changeRequest = result.user.createProfileChangeRequest()
+            changeRequest.displayName = displayName
+            try await changeRequest.commitChanges()
+            try await firestoreService.saveUserProfile(displayName: displayName)
+            self.user = Auth.auth().currentUser
+        } catch {
+            setErrorMessage(message: "Sign in failed: \(error.localizedDescription)")
+        }
+    }
+    
+    func signOut() {
+        do{
+            try Auth.auth().signOut()
+        }catch{
+            setErrorMessage(message: "Sign Out failed: \(error.localizedDescription)")
+        }
+    }
     
     // MARK: - Grocery Item Methods
     
@@ -75,12 +134,12 @@ class AppDataStore {
                 Task { @MainActor [weak self] in
                     self?.groceryItems = groceryItems
                 }
-        }, onError: { errorMessage in
-            Task { @MainActor [weak self] in
-                self?.groceryItems = []
-                self?.setErrorMessage(message: errorMessage)
-            }
-        })
+            }, onError: { errorMessage in
+                Task { @MainActor [weak self] in
+                    self?.groceryItems = []
+                    self?.setErrorMessage(message: errorMessage)
+                }
+            })
     }
     
     func addGroceryItem(_ item: GroceryItem) async {
@@ -204,6 +263,18 @@ class AppDataStore {
             self.setErrorMessage(message: "Failed to save weekly plan: \(error.localizedDescription)")
         }
     }
+    
+    private func startHouseholdListener() {
+        householdListener = firestoreService.observeHousehold(onUpdate: { [weak self] household in
+            guard let self else { return }
+            Task { @MainActor in
+                self.household = household
+                self.householdMembers = (try? await self.firestoreService.fetchHouseholdMembers(memberIds: household.members)) ?? []
+            }
+        }, onError: { [weak self] errorMessage in
+            self?.setErrorMessage(message: errorMessage)
+        })
+    }
 
     // MARK: - Household Methods
 
@@ -215,7 +286,7 @@ class AppDataStore {
             return nil
         }
     }
-
+    
     @discardableResult
     func joinHousehold(code: String) async -> Bool {
         do {

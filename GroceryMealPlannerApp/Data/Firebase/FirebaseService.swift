@@ -11,8 +11,14 @@ import FirebaseAuth
 
 protocol FirestoreServiceProtocol {
     
-    func ensureAuthenticated() async throws
-    
+    func setupHousehold() async throws
+    func saveUserProfile(displayName: String) async throws
+    func observeHousehold(
+        onUpdate: @escaping (Household) -> Void,
+        onError: ((String) -> Void)?
+    ) -> ListenerRegistration?
+    func fetchHouseholdMembers(memberIds: [String]) async throws -> [UserProfile]
+
     func generateInviteCode() async throws -> String
     func joinHousehold(code: String) async throws
     
@@ -46,37 +52,67 @@ protocol FirestoreServiceProtocol {
 
 class FirestoreService : FirestoreServiceProtocol {
     
-    
     private var dataBase: Firestore { Firestore.firestore() }
     private var householdId: String = ""
     
     // MARK: Authentication
     
-    func ensureAuthenticated() async throws {
-        if Auth.auth().currentUser == nil {
-            _ = try await Auth.auth().signInAnonymously()
-        }
+    func setupHousehold() async throws {
+        _ = try await Auth.auth().currentUser?.getIDTokenResult(forcingRefresh: true)
         householdId = try await getOrCreateHouseholdId()
     }
     
     private func getOrCreateHouseholdId() async throws -> String {
-        if let id = KeychainHelper.getItem("householdId") {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw HouseholdError.notAuthenticated
+        }
+
+        let userDoc = try await dataBase.collection("users").document(uid).getDocument()
+        if let id = userDoc.data()?["householdId"] as? String {
             return id
         }
-        
-        guard let uid = Auth.auth().currentUser?.uid else {
-            throw NSError(domain: "HouseholdError", code: 0, userInfo:
-                            [NSLocalizedDescriptionKey: "Not authenticated"])
-        }
-        
-        let newHouseHold = Household(members: [uid], createdAt: .now, updatedAt: .now)
-        let ref = try dataBase.collection("households").addDocument(from: newHouseHold)
-        
-        KeychainHelper.saveItem(ref.documentID, for: "householdId")
-        
+
+        let newHousehold = Household(ownerId: uid, members: [uid], createdAt: .now, updatedAt: .now)
+        let ref = try dataBase.collection("households").addDocument(from: newHousehold)
+
+        try await dataBase.collection("users").document(uid)
+            .setData(["householdId": ref.documentID], merge: true)
+
         return ref.documentID
     }
     
+    func saveUserProfile(displayName: String) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { throw HouseholdError.notAuthenticated }
+        try await dataBase.collection("users").document(uid).setData(["displayName": displayName], merge: true)
+    }
+
+    func observeHousehold(
+        onUpdate: @escaping (Household) -> Void,
+        onError: ((String) -> Void)? = nil
+    ) -> ListenerRegistration? {
+        return dataBase.document("households/\(householdId)")
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    onError?("Error loading household: \(error.localizedDescription)")
+                    return
+                }
+                guard let snapshot, snapshot.exists else { return }
+                do {
+                    onUpdate(try snapshot.data(as: Household.self))
+                } catch {
+                    onError?("Failed to decode household: \(error.localizedDescription)")
+                }
+            }
+    }
+
+    func fetchHouseholdMembers(memberIds: [String]) async throws -> [UserProfile] {
+        guard !memberIds.isEmpty else { return [] }
+        let snapshot = try await dataBase.collection("users")
+            .whereField(FieldPath.documentID(), in: memberIds)
+            .getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: UserProfile.self) }
+    }
+
     // MARK: - Path configuration
     
     private var dataBasePath: String {
@@ -113,9 +149,11 @@ class FirestoreService : FirestoreServiceProtocol {
         
         try await dataBase.collection("households").document(invite.householdId)
             .updateData(["members": FieldValue.arrayUnion([uid])])
-        try await dataBase.collection("invites").document(code).delete()
+        // TODO
+       // try await dataBase.collection("invites").document(code).delete()
         
-        KeychainHelper.saveItem(invite.householdId, for: "householdId")
+        try await dataBase.collection("users").document(uid)
+            .setData(["householdId": invite.householdId], merge: true)
         householdId = invite.householdId
     }
     

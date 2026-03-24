@@ -11,21 +11,21 @@ import FirebaseAuth
 import CoreML
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-     func application(
-         _ application: UIApplication,
-         didFinishLaunchingWithOptions launchOptions:
- [UIApplication.LaunchOptionsKey: Any]? = nil
-     ) -> Bool {
-         FirebaseApp.configure()
-         return true
-     }
- }
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions:
+        [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
+}
 
 @main
 struct GroceryMealPlannerApp: App {
     @State private var dataStore: AppDataStore
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
+    
     init() {
         if ProcessInfo.processInfo.arguments.contains("uitesting") {
             _dataStore = State(wrappedValue: AppDataStore(service: MockFirestoreService()))
@@ -38,16 +38,24 @@ struct GroceryMealPlannerApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                MainTabs()
-                    .environment(\.font, AppFont.regular(size: 16))
-                    .environment(dataStore)
-                    .overlay(
-                        GlobalAlertToast()
-                            .environment(dataStore)
-                    )
-                    .task {
-                        dataStore.startListening()
-                    }
+                if dataStore.user != nil {
+                    MainTabs()
+                        .environment(\.font, AppFont.regular(size: 16))
+                        .environment(dataStore)
+                        .overlay(
+                            GlobalAlertToast()
+                                .environment(dataStore)
+                        )
+                        .task {
+                            dataStore.startListening()
+                        }
+                } else {
+                    LoginView()
+                        .environment(dataStore)
+                }
+            }
+            .task {
+                dataStore.configureAuthStateChanges()
             }
             .onOpenURL { url in
                 guard url.scheme == "groceryplanner",

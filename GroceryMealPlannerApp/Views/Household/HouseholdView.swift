@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-
+import FirebaseAuth
 struct HouseholdView: View {
 
     @Environment(AppDataStore.self) var dataStore: AppDataStore
@@ -19,10 +19,45 @@ struct HouseholdView: View {
     var body: some View {
         NavigationStack {
             Form {
+                membersSection
                 shareSection
                 joinSection
+                signOutSection
             }
             .navigationTitle("Household")
+        }
+    }
+    
+    // MARK: - Members Section
+    private var membersSection: some View {
+        Section {
+            ForEach(dataStore.householdMembers) { member in
+                HStack {
+                    Text(member.displayName)
+                    Spacer()
+                    if member.id == dataStore.household?.ownerId {
+                        Text("Owner")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text("Members")
+        } footer: {
+            if dataStore.isHouseholdOwner {
+                Text("You created this household.")
+            } else {
+                Text("You are a member of this household.")
+            }
+        }
+    }
+
+    // MARK: - User Section
+    private var userSection: some View {
+        Section {
+            Text(dataStore.user?.displayName ?? "User")
+                .font(AppFont.bold(size: 30))
         }
     }
 
@@ -108,6 +143,24 @@ struct HouseholdView: View {
             }
         }
     }
+    
+    // MARK: SIGNOUT
+    private var signOutSection: some View {
+        Section {
+            Button {
+                dataStore.signOut()
+            } label: {
+                Text("Signout")
+                    .font(AppFont.bold(size: 16))
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color(.red))
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
+        }
+    }
+    
 
     // MARK: - Actions
 
