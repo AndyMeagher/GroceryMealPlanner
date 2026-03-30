@@ -68,4 +68,12 @@ enum GroceryCategory: String, CaseIterable, Codable {
     init(from string: String) {
         self = GroceryCategory(rawValue: string) ?? .unknown
     }
+    
+    static let sortedCases: [GroceryCategory] = {
+        allCases.sorted { lhs, rhs in
+            if lhs == .unknown { return false }
+            if rhs == .unknown { return true }
+            return lhs.rawValue < rhs.rawValue
+        }
+    }()
 }
