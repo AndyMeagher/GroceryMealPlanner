@@ -7,6 +7,8 @@ import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { onCall } from "firebase-functions/https";
 import Anthropic from "@anthropic-ai/sdk";
+import * as cheerio from "cheerio";
+import { HttpsError } from "firebase-functions/https";
 
 initializeApp();
 
@@ -79,17 +81,86 @@ export const importRecipeFromUrl = onCall(
     const anthropic = new Anthropic({
       apiKey: process.env.AIKEY,
     });
-    // fetch html, call claude, return recipe
+
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+
+    const html = await response.text();
+
+    // strip it down
+    const $ = cheerio.load(html);
+    $("nav, header, footer, script, style, iframe").remove();
+
+    // try specific recipe container first
+    const recipeContent = $("#recipe").next();
+
+    var cleaned;
+    if (recipeContent.length) {
+      cleaned = recipeContent.text().replace(/\s+/g, " ").trim();
+    } else {
+      // fall back to main content
+      const main = $(
+        "main, article, [class*='recipe'], [class*='content']",
+      ).first();
+      cleaned = main.length ? main.text() : $("body").text();
+      cleaned = cleaned.replace(/\s+/g, " ").trim();
+    }
+
+    if (cleaned.length == 0) {
+      throw new HttpsError("not-found", "No recipe found at this URL");
+    }
+
+    const anthropicResponse = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: `You are a recipe extraction assistant. Extract the recipe from the following text and return it as a JSON object with exactly this shape:
+
+            {
+              "name": "string",
+              "instructions": "string",
+              "ingredients": [
+                { "name": "string", "quantity": "string" }
+              ]
+            }
+
+            Rules:
+            - Return only the JSON object, no explanation, no markdown, no code blocks
+            - Instructions should be a single string with each step separated by a newline
+            - If you cannot find a recipe in the text, return { "error": "no recipe found" }
+            - quantity must always be a string, never a number. Write "2 pieces" not 2
+            
+            Text:
+            ${cleaned}`,
+        },
+      ],
+    });
+
+    const text =
+      anthropicResponse.content[0].type === "text"
+        ? anthropicResponse.content[0].text
+        : "";
+
+    try {
+      const recipe = JSON.parse(text);
+      return { recipe: recipe };
+    } catch (e) {
+      throw new HttpsError("internal", "Failed to parse recipe from this URL");
+    }
   },
 );
 
 export const createNewRecipeFromIngredients = onCall(
   { secrets: ["AIKEY"] },
   async (request) => {
-    const { ingredients } = request.data;
-    const anthropic = new Anthropic({
-      apiKey: process.env.AIKEY,
-    });
+    //const { ingredients } = request.data;
+    // const anthropic = new Anthropic({
+    //   apiKey: process.env.AIKEY,
+    // });
     // ask ai to create a recipe
+    return { success: true };
   },
 );

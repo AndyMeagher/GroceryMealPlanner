@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		616E4D832F8EBA9800863AC2 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 616E4D822F8EBA9800863AC2 /* FirebaseFunctions */; };
 		61C40E962F23FF0200574B09 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 61C40E952F23FF0200574B09 /* FirebaseAuth */; };
 		61C40E982F23FF0200574B09 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 61C40E972F23FF0200574B09 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
@@ -70,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				616E4D832F8EBA9800863AC2 /* FirebaseFunctions in Frameworks */,
 				61C40E962F23FF0200574B09 /* FirebaseAuth in Frameworks */,
 				61C40E982F23FF0200574B09 /* FirebaseFirestore in Frameworks */,
 			);
@@ -92,12 +94,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		616E4D812F8EBA9800863AC2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		61C40E482F22A9FC00574B09 = {
 			isa = PBXGroup;
 			children = (
 				61C40E532F22A9FC00574B09 /* GroceryMealPlannerApp */,
 				61C40E632F22A9FD00574B09 /* GroceryMealPlannerAppTests */,
 				61C40E6D2F22A9FD00574B09 /* GroceryMealPlannerAppUITests */,
+				616E4D812F8EBA9800863AC2 /* Frameworks */,
 				61C40E522F22A9FC00574B09 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,6 +144,7 @@
 			packageProductDependencies = (
 				61C40E952F23FF0200574B09 /* FirebaseAuth */,
 				61C40E972F23FF0200574B09 /* FirebaseFirestore */,
+				616E4D822F8EBA9800863AC2 /* FirebaseFunctions */,
 			);
 			productName = GroceryMealPlannerApp;
 			productReference = 61C40E512F22A9FC00574B09 /* GroceryMealPlannerApp.app */;
@@ -644,6 +655,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		616E4D822F8EBA9800863AC2 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 61C40E942F23FF0200574B09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
 		61C40E952F23FF0200574B09 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 61C40E942F23FF0200574B09 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

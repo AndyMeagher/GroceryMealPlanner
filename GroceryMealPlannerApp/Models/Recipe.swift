@@ -39,3 +39,17 @@ struct Ingredient: Codable, Identifiable, Hashable {
         return self.name.lowercased().replacingOccurrences(of: " ", with: "_")
     }
 }
+
+extension Ingredient {
+    enum CodingKeys: String, CodingKey {
+        case id, name, quantity
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? UUID().uuidString
+        self.name = try container.decode(String.self, forKey: .name)
+        self.quantity = try container.decode(String.self, forKey: .quantity)
+    }
+}
+

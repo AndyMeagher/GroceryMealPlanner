@@ -21,12 +21,12 @@ class AppDataStore {
     var user: User?
     var household: Household?
     var householdMembers: [UserProfile] = []
-
+    
     var isHouseholdOwner: Bool {
         guard let uid = user?.uid, let household else { return false }
         return household.ownerId == uid
     }
-
+    
     var groceryItems: [GroceryItem]?
     var recipes: [Recipe]?
     var weeklyPlans: [WeeklyPlan]?
@@ -42,7 +42,7 @@ class AppDataStore {
     private var recipeListener: ListenerRegistration?
     private var planListener: ListenerRegistration?
     private var householdListener: ListenerRegistration?
-
+    
     private var authStateHandle: AuthStateDidChangeListenerHandle!
     
     
@@ -91,7 +91,7 @@ class AppDataStore {
             self.user = user
         }
     }
-
+    
     func signInWithApple(credential: ASAuthorizationAppleIDCredential, nonce: String) async {
         guard let appleIDToken = credential.identityToken,
               let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
@@ -104,7 +104,7 @@ class AppDataStore {
             rawNonce: nonce,
             fullName: credential.fullName
         )
-
+        
         do {
             let result = try await Auth.auth().signIn(with: firebaseCredential)
             let displayName = credential.fullName?.givenName ?? credential.email ?? "User"
@@ -240,6 +240,18 @@ class AppDataStore {
         }
     }
     
+    func importFromUrl(_ string: String) async -> ImportedRecipe? {
+        guard let url = URL(string: string),
+              let scheme = url.scheme,
+              ["http", "https"].contains(scheme),
+              url.host != nil else {
+            self.setErrorMessage(message: "Invalid URL. Check the format and try again.")
+            return nil
+        }
+        
+        return try? await firestoreService.importRecipeFromUrl(url)
+    }
+    
     // MARK: - Weekly Plan Methods
     
     private func startWeeklyPlanListener() {
@@ -275,9 +287,9 @@ class AppDataStore {
             self?.setErrorMessage(message: errorMessage)
         })
     }
-
+    
     // MARK: - Household Methods
-
+    
     func generateInviteCode() async -> String? {
         do {
             return try await firestoreService.generateInviteCode()

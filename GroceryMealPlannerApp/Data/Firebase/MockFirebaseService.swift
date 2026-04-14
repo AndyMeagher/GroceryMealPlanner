@@ -43,6 +43,11 @@ final class MockFirestoreService: FirestoreServiceProtocol {
         return nil
     }
     
+    func importRecipeFromUrl(_ url: URL) async throws -> ImportedRecipe? {
+        return nil
+    }
+    
+    
     func addGroceryItem(_ item: GroceryItem) async throws{
         groceryItems.append(item)
     }

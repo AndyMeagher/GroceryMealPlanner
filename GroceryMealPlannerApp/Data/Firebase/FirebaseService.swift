@@ -8,6 +8,13 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFunctions
+
+struct ImportedRecipe: Decodable {
+    let name: String
+    let instructions: String
+    let ingredients: [Ingredient]
+}
 
 protocol FirestoreServiceProtocol {
     
@@ -18,7 +25,7 @@ protocol FirestoreServiceProtocol {
         onError: ((String) -> Void)?
     ) -> ListenerRegistration?
     func fetchHouseholdMembers(memberIds: [String]) async throws -> [UserProfile]
-
+    
     func generateInviteCode() async throws -> String
     func joinHousehold(code: String) async throws
     
@@ -41,6 +48,8 @@ protocol FirestoreServiceProtocol {
     func addRecipe(_ recipe: Recipe) async throws
     func updateRecipe(_ recipe: Recipe) async throws
     func deleteRecipe(_ recipe: Recipe) async throws
+    
+    func importRecipeFromUrl(_ url: URL) async throws -> ImportedRecipe?
     
     func observeWeeklyPlan(
         onUpdate: @escaping ([WeeklyPlan]) -> Void,
@@ -66,18 +75,18 @@ class FirestoreService : FirestoreServiceProtocol {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw HouseholdError.notAuthenticated
         }
-
+        
         let userDoc = try await dataBase.collection("users").document(uid).getDocument()
         if let id = userDoc.data()?["householdId"] as? String {
             return id
         }
-
+        
         let newHousehold = Household(ownerId: uid, members: [uid], createdAt: .now, updatedAt: .now)
         let ref = try dataBase.collection("households").addDocument(from: newHousehold)
-
+        
         try await dataBase.collection("users").document(uid)
             .setData(["householdId": ref.documentID], merge: true)
-
+        
         return ref.documentID
     }
     
@@ -85,7 +94,7 @@ class FirestoreService : FirestoreServiceProtocol {
         guard let uid = Auth.auth().currentUser?.uid else { throw HouseholdError.notAuthenticated }
         try await dataBase.collection("users").document(uid).setData(["displayName": displayName], merge: true)
     }
-
+    
     func observeHousehold(
         onUpdate: @escaping (Household) -> Void,
         onError: ((String) -> Void)? = nil
@@ -104,7 +113,7 @@ class FirestoreService : FirestoreServiceProtocol {
                 }
             }
     }
-
+    
     func fetchHouseholdMembers(memberIds: [String]) async throws -> [UserProfile] {
         guard !memberIds.isEmpty else { return [] }
         let snapshot = try await dataBase.collection("users")
@@ -112,7 +121,7 @@ class FirestoreService : FirestoreServiceProtocol {
             .getDocuments()
         return snapshot.documents.compactMap { try? $0.data(as: UserProfile.self) }
     }
-
+    
     // MARK: - Path configuration
     
     private var dataBasePath: String {
@@ -134,7 +143,7 @@ class FirestoreService : FirestoreServiceProtocol {
         try dataBase.collection("invites").document(code).setData(from: invite)
         return code
     }
-
+    
     func joinHousehold(code: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw HouseholdError.notAuthenticated
@@ -150,7 +159,7 @@ class FirestoreService : FirestoreServiceProtocol {
         try await dataBase.collection("households").document(invite.householdId)
             .updateData(["members": FieldValue.arrayUnion([uid])])
         // TODO
-       // try await dataBase.collection("invites").document(code).delete()
+        // try await dataBase.collection("invites").document(code).delete()
         
         try await dataBase.collection("users").document(uid)
             .setData(["householdId": invite.householdId], merge: true)
@@ -286,6 +295,19 @@ class FirestoreService : FirestoreServiceProtocol {
             return
         }
         try await dataBase.collection("\(dataBasePath)/recipes").document(id).delete()
+    }
+    
+    func importRecipeFromUrl(_ url: URL) async throws -> ImportedRecipe? {
+        let functions = Functions.functions()
+
+        let result = try await functions.httpsCallable("importRecipeFromUrl").call(["url": url.absoluteString])
+
+        guard let data = result.data as? [String: Any],
+              let recipeData = data["recipe"] as? [String: Any] else {
+            throw NSError(domain: "RecipeImport", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+        }
+        let jsonData = try JSONSerialization.data(withJSONObject: recipeData)
+        return try JSONDecoder().decode(ImportedRecipe.self, from: jsonData)
     }
     
     // MARK: - WeeklyPlan

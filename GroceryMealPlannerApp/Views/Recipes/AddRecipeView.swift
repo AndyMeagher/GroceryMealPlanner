@@ -15,15 +15,18 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var name = ""
+    @State private var importUrl = ""
     @State private var instructions = ""
     @State private var ingredients: [Ingredient] = []
     @State private var isSaving = false
-    
+    @State private var isImporting = false
+
     // MARK: - Body
     
     var body: some View {
         NavigationStack {
             Form {
+                parseFromUrl
                 recipeNameSection
                 instructionsSection
                 ingredientsSection
@@ -57,6 +60,22 @@ struct AddRecipeView: View {
     }
     
     // MARK: - Subviews
+    
+    private var parseFromUrl: some View {
+        Section("Import from URL:") {
+            HStack{
+                TextField("Recipe Url", text: $importUrl)
+                    .accessibilityLabel("Recipe Url")
+                Button("Import") {
+                   importRecipe()
+                }
+                .modifier(
+                    iOS26ButtonStyle()
+                )
+                .disabled(importUrl.isEmpty)
+            }
+        }
+    }
     
     private var recipeNameSection: some View {
         Section("Recipe Name") {
@@ -130,6 +149,20 @@ struct AddRecipeView: View {
             await dataStore.addRecipe(recipe)
             isSaving = false
             dismiss()
+        }
+    }
+    
+    private func importRecipe() {
+        Task{
+            if let recipe = await dataStore.importFromUrl(importUrl){
+                name = recipe.name
+                ingredients = recipe.ingredients
+                instructions = recipe.instructions
+            }else{
+                print("here")
+            }
+           
+            
         }
     }
 }
