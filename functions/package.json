@@ -10,10 +10,12 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "24"
+    "node": "25"
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
+    "cheerio": "^1.2.0",
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.0"
   },

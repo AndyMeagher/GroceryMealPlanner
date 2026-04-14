@@ -5,6 +5,8 @@ import {
 } from "firebase-functions/v2/firestore";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
+import { onCall } from "firebase-functions/https";
+import Anthropic from "@anthropic-ai/sdk";
 
 initializeApp();
 
@@ -67,5 +69,27 @@ export const updateItemCategoryCache = onDocumentUpdated(
     cacheRef
       .set({ aisle: after.category })
       .catch((err) => logger.error("Cache write failed", err));
+  },
+);
+
+export const importRecipeFromUrl = onCall(
+  { secrets: ["AIKEY"] },
+  async (request) => {
+    const { url } = request.data;
+    const anthropic = new Anthropic({
+      apiKey: process.env.AIKEY,
+    });
+    // fetch html, call claude, return recipe
+  },
+);
+
+export const createNewRecipeFromIngredients = onCall(
+  { secrets: ["AIKEY"] },
+  async (request) => {
+    const { ingredients } = request.data;
+    const anthropic = new Anthropic({
+      apiKey: process.env.AIKEY,
+    });
+    // ask ai to create a recipe
   },
 );
