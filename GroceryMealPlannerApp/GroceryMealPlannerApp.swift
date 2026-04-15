@@ -8,7 +8,6 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth
-import CoreML
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
@@ -24,7 +23,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct GroceryMealPlannerApp: App {
     @State private var dataStore: AppDataStore
-    @State private var toastWindow: UIWindow?
+    @State private var overlayWindow: OverlayWindow?
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
@@ -53,7 +52,10 @@ struct GroceryMealPlannerApp: App {
             }
             .task {
                 dataStore.configureAuthStateChanges()
-                setupToastWindow()
+                setupOverlayWindow()
+            }
+            .onChange(of: dataStore.isLoading) { _, isLoading in
+                overlayWindow?.shouldBlockView = isLoading
             }
             .onOpenURL { url in
                 guard url.scheme == "groceryplanner",
@@ -64,16 +66,19 @@ struct GroceryMealPlannerApp: App {
         }
     }
 
-    private func setupToastWindow() {
-        guard toastWindow == nil,
+    private func setupOverlayWindow() {
+        guard overlayWindow == nil,
               let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        let window = PassthroughWindow(windowScene: scene)
+        let window = OverlayWindow(windowScene: scene)
+        window.shouldBlockView = dataStore.isLoading
         window.windowLevel = .alert + 1
         window.backgroundColor = .clear
-        let controller = UIHostingController(rootView: GlobalAlertToast().environment(dataStore))
+        let controller = UIHostingController(rootView: GlobalOverlayRootView().environment(dataStore))
         controller.view.backgroundColor = .clear
         window.rootViewController = controller
         window.isHidden = false
-        toastWindow = window
+        overlayWindow = window
     }
+    
+    
 }

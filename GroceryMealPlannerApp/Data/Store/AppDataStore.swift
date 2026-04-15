@@ -31,7 +31,8 @@ class AppDataStore {
     var recipes: [Recipe]?
     var weeklyPlans: [WeeklyPlan]?
     var errorMessage: String?
-    
+    var isLoading: Bool = false
+
     var currentWeekPlan: WeeklyPlan? {
         weeklyPlans?.first
     }
@@ -248,8 +249,10 @@ class AppDataStore {
             self.setErrorMessage(message: "Invalid URL. Check the format and try again.")
             return nil
         }
-        
-        return try? await firestoreService.importRecipeFromUrl(url)
+        self.isLoading = true
+        let importedRecipe = try? await firestoreService.importRecipeFromUrl(url)
+        self.isLoading = false
+        return importedRecipe
     }
     
     // MARK: - Weekly Plan Methods

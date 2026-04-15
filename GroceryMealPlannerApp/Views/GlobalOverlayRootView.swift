@@ -1,19 +1,25 @@
 //
-//  GlobalAlertToast.swift
+//  Untitled.swift
 //  GroceryMealPlannerApp
 //
-//  Created by Andy M on 1/25/26.
+//  Created by Andy M on 4/15/26.
 //
+
 
 
 import SwiftUI
 
-struct GlobalAlertToast: View {
+struct GlobalOverlayRootView: View {
     @Environment(AppDataStore.self) var dataStore: AppDataStore
-    @State private var showToast = false
-
+    @State private var showToast: Bool = false
+    
     var body: some View {
         VStack {
+            if dataStore.isLoading {
+                ProgressView("Loading...")
+                    .progressViewStyle(.circular)
+            }
+            
             if showToast, let message = dataStore.errorMessage {
                 Text(message)
                     .padding()
@@ -29,7 +35,6 @@ struct GlobalAlertToast: View {
                         }
                     }
             }
-            Spacer()
         }
         .onChange(of: dataStore.errorMessage) { _, newValue in
             guard newValue != nil else { return }
@@ -47,4 +52,12 @@ struct GlobalAlertToast: View {
             self.dataStore.errorMessage = nil
         }
     }
+
+   
+}
+
+
+#Preview {
+    GlobalOverlayRootView()
+        .environment(AppDataStore(service: MockFirestoreService()))
 }
