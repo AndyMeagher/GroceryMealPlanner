@@ -20,10 +20,16 @@ export const getItemCategory = onDocumentCreated(
   async (event) => {
     const eventData = event.data;
     const name = eventData?.data().name.trim().toLowerCase();
+    const category = eventData?.data().category;
     const apiKey = process.env.SPOONACULAR_API_KEY;
 
     if (!name || !eventData) {
       logger.error("Undefined Name or Event Data");
+      return;
+    }
+
+    if (category === "Costco") {
+      logger.info(`Skipping categorization for Costco item: ${name}`);
       return;
     }
 
