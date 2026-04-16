@@ -8,21 +8,21 @@
 import SwiftUI
 
 struct GroceryListView: View {
-    
+
     // MARK: - Properties
-    
+
     @State private var showingAddItem = false
     @State private var newItemName = ""
     @State private var newItemQuantity = ""
     @Environment(AppDataStore.self) var dataStore: AppDataStore
     @State private var editingItem : GroceryItem?
-    
+
     var groceryItems : [GroceryItem] {
         return dataStore.groceryItems ?? []
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             content
@@ -38,7 +38,7 @@ struct GroceryListView: View {
                         )
                         .accessibilityLabel("Add Grocery Item")
                     }
-                    
+
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button("Clear Checked") {
                             clearCheckedItems()
@@ -52,9 +52,9 @@ struct GroceryListView: View {
                 }
         }
     }
-    
+
     // MARK: - Subviews
-    
+
     @ViewBuilder
     private var content: some View {
         if dataStore.groceryItems == nil {
@@ -84,9 +84,9 @@ struct GroceryListView: View {
                     EditGroceryItemView(groceryItem: nonOptionalBinding)
                 }
         }
-        
+
     }
-    
+
     private var groceryList: some View {
         List {
             // Group items by category
@@ -97,7 +97,7 @@ struct GroceryListView: View {
                         if $0.isChecked != $1.isChecked { return !$0.isChecked }
                         return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
                     }
-            
+
             // Only show section if there are items
             if !itemsInCategory.isEmpty {
                 Section(header:
@@ -127,7 +127,7 @@ struct GroceryListView: View {
                                 .accessibilityElement(children: .combine)
                                 .contentShape(Rectangle())
                             }
-                            
+
                             Button(action: {
                                 editingItem = item
                             }) {

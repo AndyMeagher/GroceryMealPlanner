@@ -98,20 +98,16 @@ export const importRecipeFromUrl = onCall(
     const $ = cheerio.load(html);
     $("nav, header, footer, script, style, iframe").remove();
 
-    // try specific recipe container first
-    const recipeContent = $("#recipe").next();
-
     var cleaned;
-    if (recipeContent.length) {
-      cleaned = recipeContent.text().replace(/\s+/g, " ").trim();
-    } else {
-      // fall back to main content
-      const main = $(
-        "main, article, [class*='recipe'], [class*='content']",
-      ).first();
-      cleaned = main.length ? main.text() : $("body").text();
-      cleaned = cleaned.replace(/\s+/g, " ").trim();
-    }
+
+    // fall back to main content
+    const main =
+      $("[class*='recipe']").first() ||
+      $("[class*='content']").first() ||
+      $("main, article").first();
+    console.log(main.text().length, " LENGTH!");
+    cleaned = main.length ? main.text() : $("body").text();
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
 
     if (cleaned.length == 0) {
       throw new HttpsError("not-found", "No recipe found at this URL");
@@ -119,7 +115,7 @@ export const importRecipeFromUrl = onCall(
 
     const anthropicResponse = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 1024,
+      max_tokens: 3000,
       messages: [
         {
           role: "user",
@@ -135,26 +131,35 @@ export const importRecipeFromUrl = onCall(
 
             Rules:
             - Return only the JSON object, no explanation, no markdown, no code blocks
-            - Instructions should be a single string with each step separated by a newline
+            - Instructions should be a single string with each step separated by 2 newlines
             - If you cannot find a recipe in the text, return { "error": "no recipe found" }
             - quantity must always be a string, never a number. Write "2 pieces" not 2
-            
+
             Text:
             ${cleaned}`,
         },
       ],
     });
 
+    if (anthropicResponse.stop_reason !== "end_turn") {
+      throw new HttpsError(
+        "internal",
+        "Response was truncated. Not enough tokens.",
+      );
+    }
+
     const text =
       anthropicResponse.content[0].type === "text"
         ? anthropicResponse.content[0].text
         : "";
-
     try {
       const recipe = JSON.parse(text);
       return { recipe: recipe };
     } catch (e) {
-      throw new HttpsError("internal", "Failed to parse recipe from this URL");
+      throw new HttpsError(
+        "internal",
+        `Failed to parse recipe from this URL: ${e}`,
+      );
     }
   },
 );

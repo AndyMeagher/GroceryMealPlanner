@@ -8,23 +8,26 @@
 import SwiftUI
 
 struct AddGroceryItemView: View {
-    
+
     // MARK: - Properties
-    
+
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var quantity = ""
+    @State private var isFromCostco : Bool = false
+
     let onAdd: (GroceryItem) -> Void
 
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             Form {
                 TextField("Item name", text: $name)
                     .accessibilityLabel("Item name")
-                TextField("Quantity", text: $quantity)
+                TextField("Quantity (optional)", text: $quantity)
                     .accessibilityLabel("Quantity")
+                Toggle(isOn: $isFromCostco, label: {Text("Costco Item: ")})
             }
             .navigationTitle("Add Item")
             .navigationBarTitleDisplayMode(.inline)
@@ -39,7 +42,8 @@ struct AddGroceryItemView: View {
                         Task{
                             let item = GroceryItem(
                                 name: name,
-                                quantity: quantity
+                                quantity: quantity,
+                                category: isFromCostco ? .costco : .unknown
                             )
                             onAdd(item)
                             dismiss()

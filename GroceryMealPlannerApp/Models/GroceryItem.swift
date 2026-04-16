@@ -16,7 +16,7 @@ struct GroceryItem: Identifiable, Codable{
     var isChecked: Bool
     let createdAt: Date
     var updatedAt: Date
-    
+
     init(name: String,
          quantity: String?,
          isChecked: Bool = false,
@@ -63,12 +63,13 @@ enum GroceryCategory: String, CaseIterable, Codable {
     case driedFruits               = "Dried Fruits"
     case grillingSupplies          = "Grilling Supplies"
     case bread                     = "Bread"
+    case costco                    = "Costco"
     case unknown                   = "Unknown"
-    
+
     init(from string: String) {
         self = GroceryCategory(rawValue: string) ?? .unknown
     }
-    
+
     static let sortedCases: [GroceryCategory] = {
         allCases.sorted { lhs, rhs in
             if lhs == .unknown { return false }

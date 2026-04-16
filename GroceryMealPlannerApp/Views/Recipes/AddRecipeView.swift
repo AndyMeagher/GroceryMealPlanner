@@ -28,8 +28,8 @@ struct AddRecipeView: View {
             Form {
                 parseFromUrl
                 recipeNameSection
-                instructionsSection
                 ingredientsSection
+                instructionsSection
             }
             .navigationTitle("New Recipe")
             .navigationBarTitleDisplayMode(.inline)

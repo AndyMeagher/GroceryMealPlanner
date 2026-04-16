@@ -249,10 +249,16 @@ class AppDataStore {
             self.setErrorMessage(message: "Invalid URL. Check the format and try again.")
             return nil
         }
-        self.isLoading = true
-        let importedRecipe = try? await firestoreService.importRecipeFromUrl(url)
-        self.isLoading = false
-        return importedRecipe
+        do{
+            self.isLoading = true
+            let importedRecipe = try await firestoreService.importRecipeFromUrl(url)
+            self.isLoading = false
+            return importedRecipe
+        } catch {
+            self.setErrorMessage(message: "Failed to import recipe: \(error.localizedDescription)")
+            self.isLoading = false
+            return nil
+        }
     }
     
     // MARK: - Weekly Plan Methods
