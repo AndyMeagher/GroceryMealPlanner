@@ -27,7 +27,7 @@ class AppDataStore {
         return household.ownerId == uid
     }
     
-    var groceryItems: [GroceryItem]?
+    lazy var groceryItems: [GroceryItem]?
     var recipes: [Recipe]?
     var weeklyPlans: [WeeklyPlan]?
     var errorMessage: String?
@@ -169,7 +169,21 @@ class AppDataStore {
     
     func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async {
         do {
-            try await firestoreService.addOrUpdateGroceryItems(with: ingredients)
+            let groceryItems : [GroceryItem] = ingredients.map{
+                ingredient in
+                if var existing = groceryItems.first ( where:{
+                    $0.name.lowercased() == ingredient.name.lowercased()
+                }){
+                    if let existingQty = existing.quantity {
+                        existing.quantity = "\(existingQty) + \(ingredient.quantity)"
+                    } else {
+                        existing.quantity = ingredient.quantity
+                    }
+                    return existing
+                }
+                return GroceryItem(name: ingredient.name, quantity: ingredient.quantity)
+            }
+            try await firestoreService.addOrUpdateGroceryItems(with: groceryItems)
             self.setErrorMessage(message: nil)
         } catch {
             self.setErrorMessage(message: "Failed to add ingredients to grocery list: \(error.localizedDescription)")

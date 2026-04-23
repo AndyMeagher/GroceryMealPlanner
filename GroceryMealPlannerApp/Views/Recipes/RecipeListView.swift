@@ -16,7 +16,9 @@ struct RecipeListView: View {
     @State private var selectedRecipe: Recipe?
     
     var recipes : [Recipe] {
-        return dataStore.recipes ?? []
+        return dataStore.recipes?.sorted(by: { lhs, rhs in
+            return lhs.name.lowercased() < rhs.name.lowercased()
+        }) ?? []
     }
     
     // MARK: - Body

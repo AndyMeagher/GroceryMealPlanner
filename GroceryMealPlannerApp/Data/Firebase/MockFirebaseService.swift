@@ -62,7 +62,7 @@ final class MockFirestoreService: FirestoreServiceProtocol {
         groceryItems.removeAll { $0.id == item.id }
     }
     
-    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws  {
+    func addOrUpdateGroceryItems(with ingredients: [GroceryItem]) async throws  {
         let items = ingredients.map { Ingredient in
             GroceryItem(name: Ingredient.name, quantity: Ingredient.quantity, )
         }

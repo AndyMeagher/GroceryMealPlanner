@@ -37,7 +37,7 @@ protocol FirestoreServiceProtocol {
     func addGroceryItem(_ item: GroceryItem) async throws
     func updateGroceryItem(_ item: GroceryItem) async throws
     func deleteGroceryItem(_ item: GroceryItem) async throws
-    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws
+    func addOrUpdateGroceryItems(with items: [GroceryItem]) async throws
     func deleteAllCheckedGroceryItems() async throws
     
     func observeRecipes(
@@ -216,17 +216,17 @@ class FirestoreService : FirestoreServiceProtocol {
         try await dataBase.collection("\(dataBasePath)/groceries").document(id).delete()
     }
     
-    func addOrUpdateGroceryItems(with ingredients: [Ingredient]) async throws {
-        var results: [GroceryItem] = []
-        
+    func addOrUpdateGroceryItems(with items: [GroceryItem]) async throws {
         let batch = dataBase.batch()
-        for item in ingredients {
-            let docRef = dataBase.collection("\(dataBasePath)/groceries").document(item.id)
-            let groceryItem = GroceryItem(name: item.name, quantity: item.quantity, isChecked: false)
-            
-            try batch.setData(from: groceryItem, forDocument: docRef, merge: true)
-            
-            results.append(groceryItem)
+        for item in items {
+            if let id = item.id{
+                let docRef = dataBase.collection("\(dataBasePath)/groceries").document(id)
+                try batch.setData(from: item, forDocument: docRef, merge: true)
+            }
+            else{
+                let docRef = dataBase.collection("\(dataBasePath)/groceries").document()
+                try batch.setData(from: item, forDocument: docRef)
+            }
         }
         
         try await batch.commit()
