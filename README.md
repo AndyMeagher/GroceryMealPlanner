@@ -1,7 +1,6 @@
 # This Week's Eats iOS App
 
-A personal SwiftUI iOS app for meal planning and grocery tracking.  
-Originally built for my partner and I to manage meal planning and grocery shopping for the week as a shared household, this version has been adapted for demo and interview purposes.
+A personal SwiftUI iOS app for meal planning and grocery tracking, built for shared household use. Plan meals for the week, generate grocery lists, and keep everything in sync across your household in real time.
 
 ---
 
@@ -14,20 +13,24 @@ Originally built for my partner and I to manage meal planning and grocery shoppi
 ---
 
 ## Running the App
-	1.	Open the project in Xcode
-	2.	Build and run on a simulator or device
 
-_Note: Needs GoogleServices-Plist file 
+1. Open the project in Xcode
+2. Build and run on a simulator or device
+
+_Note: Requires a `GoogleServices-Info.plist` file for Firebase configuration._
 
 ---
 
 ## What the App Does
 
-- Create and manage recipes
+- Sign in with **Apple Login**
+- Invite household members to share grocery lists and meal plans
+- Create and manage recipes, or import them directly from a URL via the **Spoonacular API**
 - Plan meals by day of the week
-- Generate Grocery list manually or using assigned recipes
+- Generate a grocery list manually or from your assigned weekly recipes
+- Grocery items are automatically **categorized** using the Spoonacular API
 - Support accessibility features like VoiceOver and Dynamic Type
-  
+
 <div style="display: flex; gap: 100px; align-items: center;">
 <img width="250"  alt="Grocery" src="https://github.com/user-attachments/assets/de93cc86-8372-4f63-b87a-70147149659c" />
   &nbsp;&nbsp;
@@ -42,7 +45,11 @@ _Note: Needs GoogleServices-Plist file
 
 - **SwiftUI + Swift Concurrency (async/await)**
 - **Centralized data store (`AppDataStore`) as a single source of truth**
-- **Firebase Firestore** for real-time data sync
+- **Firebase Firestore** for real-time data sync across household members
+- **Firebase Functions** backend for server-side logic including Spoonacular API integration
+- **Sign in with Apple** for secure, privacy-friendly authentication
+- **Household invite system** allowing multiple users to share a single household's lists and plans
+- **Spoonacular API** for recipe extraction from URLs and automatic grocery item categorization
 - **Protocol-based abstraction** with a mock implementation for testing
 - **Custom font system** and reusable UI components
 
@@ -68,40 +75,35 @@ _Note: Needs GoogleServices-Plist file
 │   ├── WeeklyPlan/
 │   └── MainTabs.swift
 ├── Utils/                  # Helper utilities
-│   ├── KeychainHelper.swift // Small Helper to allow my partner and I a shared household endpoint
+│   ├── KeychainHelper.swift
 │   └── DateTimeHelpers.swift
 ├── Styles/                 # Design system
 │   └── FontSystem.swift
 └── Fonts/                  # Custom typography assets
-└──GlobalAlertToast     # Centeralized Observer of Error Messages with UI Toast
+└── GlobalAlertToast        # Centralized observer of error messages with UI toast
 ```
+
+---
+
+## Backend: Firebase Functions
+
+Server-side logic runs on **Firebase Functions**, including:
+
+- Calling the Spoonacular API to extract recipes from URLs
+- Categorizing grocery ingredients returned by Spoonacular
+- Household invite validation and management
+
 ---
 
 ## Testing & Mocking
 
-- Protocols were created to abstract Firebase calls from both Unit and UI tests. 
+Protocols abstract Firebase calls, enabling both unit and UI tests without hitting live services.
 
 ---
 
-## Why This Project
-
-This app reflects how I approach real production code:
-- Start simple
-- Solve a real problem
-- Evolve architecture only when needed
-- Keep state predictable and testable
-- Prioritize accessibility and maintainability
-
 ## Future Considerations
 
-This app was built in about a week, so many features and scalability improvements were limited by time. Given more time, I would focus on:
-	
-- **Full Authentication Layer** – Implement a proper login system to fully support shared household endpoints across multiple users. 
-
-- **Enhanced Error Handling** – Provide more robust feedback for network issues, permission errors, and data validation failures.
-
-- **Pagination & Performance** – Add lazy loading and pagination to efficiently handle large datasets.
-
-- **Richer Recipe UI** – Improve the recipe creation experience with images, easier importing, and better organization.
-
-- **Expanded Testing** – While a testing layer exists, I would add more comprehensive unit and UI tests to cover all core flows.
+- **Enhanced Error Handling** – More robust feedback for network issues, permission errors, and data validation failures.
+- **Pagination & Performance** – Lazy loading and pagination for large datasets.
+- **Richer Recipe UI** – Improved recipe creation with images and better organization.
+- **Expanded Testing** – More comprehensive unit and UI test coverage across all core flows.
